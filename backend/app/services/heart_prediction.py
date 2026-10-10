@@ -27,8 +27,9 @@ DISCLAIMER = (
 )
 SENSITIVITY_NOTE = (
     "Missing inputs are unknown, not normal. Contributions marked imputed are assumptions, "
-    "not evidence. The range shows the probability across plausible values taken from the "
-    "training data."
+    "not evidence. Ranges come from the values that real training patients have for the "
+    "missing measurements; they describe the training population and do not take the "
+    "entered measurements into account."
 )
 
 
@@ -63,15 +64,19 @@ def _sensitivity_out(result: SensitivityResult) -> SensitivityOut:
         baseline_probability=result.baseline_probability,
         probability_min=result.probability_min,
         probability_max=result.probability_max,
-        can_flip=result.can_flip,
-        exhaustive=result.exhaustive,
-        scenarios_evaluated=result.scenarios_evaluated,
+        typical_low=result.typical_low,
+        typical_high=result.typical_high,
+        positive_share=result.positive_share,
+        verdict_uncertain=result.verdict_uncertain,
+        patterns_used=result.patterns_used,
         impacts=[
             FeatureImpactOut(
                 feature=item.feature,
                 label=LABELS[item.feature],
                 probability_min=item.probability_min,
                 probability_max=item.probability_max,
+                typical_low=item.typical_low,
+                typical_high=item.typical_high,
                 can_flip=item.can_flip,
             )
             for item in result.impacts
@@ -81,14 +86,16 @@ def _sensitivity_out(result: SensitivityResult) -> SensitivityOut:
 
 
 def sensitivity_warning(result: SensitivityResult) -> str | None:
-    """A warning naming the most influential missing input, only if the verdict can flip."""
-    if not result.can_flip or not result.impacts:
+    """A warning naming the most influential missing input, only when plausible cases
+    disagree about the verdict."""
+    if not result.verdict_uncertain or not result.impacts:
         return None
     lead = result.impacts[0]
     return (
-        "The predicted outcome depends on missing measurements. The most influential is "
-        f"{LABELS[lead.feature]}: the probability ranges from {lead.probability_min:.2f} "
-        f"to {lead.probability_max:.2f} across plausible values."
+        "The result is uncertain because of missing measurements: about "
+        f"{result.positive_share:.0%} of plausible cases are positive. The most influential "
+        f"is {LABELS[lead.feature]}, typically ranging from {lead.typical_low:.2f} "
+        f"to {lead.typical_high:.2f}."
     )
 
 
@@ -120,9 +127,9 @@ class HeartPredictionService:
         sensitivity = loaded.sensitivity.analyze(frame)
         warnings = _range_warnings(frame, self._registry.training_ranges)
         if sensitivity is not None:
-            flip_warning = sensitivity_warning(sensitivity)
-            if flip_warning is not None:
-                warnings.append(flip_warning)
+            uncertainty_warning = sensitivity_warning(sensitivity)
+            if uncertainty_warning is not None:
+                warnings.append(uncertainty_warning)
 
         return PredictionResponse(
             model_name=request.model_name,

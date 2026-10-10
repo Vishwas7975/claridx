@@ -1,22 +1,25 @@
 """Missing-data sensitivity: how far could the prediction move if the unknown inputs
-took plausible values?
+took values that real patients actually have?
 
-Plausible values come only from the training data: every observed code for categorical
-features, and five quantiles (5th to 95th percentile) for numeric ones. No clinical
-values are invented here.
+Scenarios are built from training patients: each one supplies its own values for all the
+missing features at once, so combinations that occur together in practice stay together.
+Scenarios do not take the entered measurements into account, so they describe the
+training population, not patients "like this one".
 """
 
 from dataclasses import dataclass
-from itertools import product
 from typing import Protocol
 
 import numpy as np
 import pandas as pd
 
-from ml.config import DECISION_THRESHOLD, MAX_SENSITIVITY_SCENARIOS, RANDOM_SEED
-from ml.pipelines.heart import FEATURES, NUMERIC_FEATURES
-
-QUANTILES = (0.05, 0.25, 0.5, 0.75, 0.95)
+from ml.config import (
+    DECISION_THRESHOLD,
+    TYPICAL_PERCENTILES,
+    UNCERTAIN_SHARE_HIGH,
+    UNCERTAIN_SHARE_LOW,
+)
+from ml.pipelines.heart import FEATURES
 
 
 class ProbabilityModel(Protocol):
@@ -27,31 +30,28 @@ class ProbabilityModel(Protocol):
 @dataclass(frozen=True)
 class FeatureImpact:
     feature: str
-    probability_min: float
+    probability_min: float  # extremes while only this feature varies
     probability_max: float
-    can_flip: bool  # plausible values of this feature alone can change the verdict
+    typical_low: float  # 10th and 90th percentile while only this feature varies
+    typical_high: float
+    can_flip: bool  # the typical range straddles the decision threshold
 
     @property
     def spread(self) -> float:
-        return self.probability_max - self.probability_min
+        return self.typical_high - self.typical_low
 
 
 @dataclass(frozen=True)
 class SensitivityResult:
     baseline_probability: float  # missing inputs filled by the model's own imputers
-    probability_min: float
+    probability_min: float  # lowest and highest over all training patterns
     probability_max: float
-    can_flip: bool  # the range crosses the decision threshold
-    exhaustive: bool  # False when joint scenarios were sampled, so the range is approximate
-    scenarios_evaluated: int
+    typical_low: float  # 10th and 90th percentile over training patterns
+    typical_high: float
+    positive_share: float  # share of plausible cases at or above the decision threshold
+    verdict_uncertain: bool  # plausible cases disagree about the verdict
+    patterns_used: int  # number of training patients that supplied values
     impacts: tuple[FeatureImpact, ...]  # missing features, most influential first
-
-
-def _candidate_values(column: pd.Series, feature: str) -> np.ndarray:
-    values = column.dropna()
-    if feature in NUMERIC_FEATURES:
-        return np.unique(values.quantile(QUANTILES).to_numpy(dtype=float))
-    return np.unique(values.to_numpy(dtype=float))
 
 
 class SensitivityAnalyzer:
@@ -60,45 +60,55 @@ class SensitivityAnalyzer:
         model: ProbabilityModel,
         background: pd.DataFrame,
         threshold: float = DECISION_THRESHOLD,
-        max_scenarios: int = MAX_SENSITIVITY_SCENARIOS,
-        seed: int = RANDOM_SEED,
     ) -> None:
         self._model = model
         self._threshold = threshold
-        self._max_scenarios = max_scenarios
-        self._seed = seed
-        self._candidates = {
-            feature: _candidate_values(background[feature], feature) for feature in FEATURES
-        }
+        self._background = background[FEATURES].astype(float).reset_index(drop=True)
 
     def analyze(self, patient: pd.DataFrame) -> SensitivityResult | None:
-        """Return None when nothing is missing (there is nothing to be sensitive to)."""
+        """Return None when nothing is missing, or when no training patient has values for
+        all the missing features (an honest range cannot be computed then)."""
         row = patient[FEATURES].iloc[[0]].astype(float)
         missing = [feature for feature in FEATURES if bool(row[feature].isna().iloc[0])]
         if not missing:
             return None
 
+        patterns = self._background.dropna(subset=missing)
+        if patterns.empty:
+            return None
+
         baseline = float(self._model.predict_proba(row)[0, 1])
-        joint, exhaustive = self._joint_scenarios(row, missing)
+
+        joint = self._repeat(row, len(patterns))
+        for feature in missing:
+            joint[feature] = patterns[feature].to_numpy()
         singles, owners = self._single_scenarios(row, missing)
 
         scenarios = pd.concat([joint, singles], ignore_index=True)
         probabilities = self._model.predict_proba(scenarios)[:, 1]
+        joint_probabilities = probabilities[: len(joint)]
         single_probabilities = probabilities[len(joint) :]
 
-        low = float(min(baseline, probabilities.min()))
-        high = float(max(baseline, probabilities.max()))
+        low_percentile, high_percentile = TYPICAL_PERCENTILES
+        typical_low, typical_high = (
+            float(value)
+            for value in np.percentile(joint_probabilities, [low_percentile, high_percentile])
+        )
+        positive_share = float(np.mean(joint_probabilities >= self._threshold))
 
         impacts = []
         for feature in missing:
             values = single_probabilities[owners == feature]
-            feature_low = float(min(baseline, values.min()))
-            feature_high = float(max(baseline, values.max()))
+            feature_low, feature_high = (
+                float(value) for value in np.percentile(values, [low_percentile, high_percentile])
+            )
             impacts.append(
                 FeatureImpact(
                     feature=feature,
-                    probability_min=feature_low,
-                    probability_max=feature_high,
+                    probability_min=float(min(baseline, values.min())),
+                    probability_max=float(max(baseline, values.max())),
+                    typical_low=feature_low,
+                    typical_high=feature_high,
                     can_flip=feature_low < self._threshold <= feature_high,
                 )
             )
@@ -106,42 +116,29 @@ class SensitivityAnalyzer:
 
         return SensitivityResult(
             baseline_probability=baseline,
-            probability_min=low,
-            probability_max=high,
-            can_flip=low < self._threshold <= high,
-            exhaustive=exhaustive,
-            scenarios_evaluated=len(scenarios),
+            probability_min=float(min(baseline, probabilities.min())),
+            probability_max=float(max(baseline, probabilities.max())),
+            typical_low=typical_low,
+            typical_high=typical_high,
+            positive_share=positive_share,
+            verdict_uncertain=UNCERTAIN_SHARE_LOW <= positive_share <= UNCERTAIN_SHARE_HIGH,
+            patterns_used=len(patterns),
             impacts=tuple(impacts),
         )
 
-    def _joint_scenarios(self, row: pd.DataFrame, missing: list[str]) -> tuple[pd.DataFrame, bool]:
-        """Every combination of candidate values, or a seeded random sample if too many."""
-        value_lists = [self._candidates[feature] for feature in missing]
-        total = int(np.prod([len(values) for values in value_lists]))
-        if total <= self._max_scenarios:
-            combos = np.array(list(product(*value_lists)), dtype=float)
-            exhaustive = True
-        else:
-            rng = np.random.default_rng(self._seed)
-            combos = np.column_stack(
-                [rng.choice(values, size=self._max_scenarios) for values in value_lists]
-            )
-            exhaustive = False
-
-        frame = pd.concat([row] * len(combos), ignore_index=True)
-        for index, feature in enumerate(missing):
-            frame[feature] = combos[:, index]
-        return frame, exhaustive
+    @staticmethod
+    def _repeat(row: pd.DataFrame, count: int) -> pd.DataFrame:
+        return pd.concat([row] * count, ignore_index=True)
 
     def _single_scenarios(
         self, row: pd.DataFrame, missing: list[str]
     ) -> tuple[pd.DataFrame, np.ndarray]:
-        """Vary one missing feature at a time; the other unknowns stay at the model's default."""
+        """Vary one missing feature at a time over training values; others stay at default."""
         frames = []
         owners: list[str] = []
         for feature in missing:
-            values = self._candidates[feature]
-            frame = pd.concat([row] * len(values), ignore_index=True)
+            values = self._background[feature].dropna().to_numpy()
+            frame = self._repeat(row, len(values))
             frame[feature] = values
             frames.append(frame)
             owners.extend([feature] * len(values))

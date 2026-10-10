@@ -81,26 +81,33 @@ class AgreementOut(BaseModel):
 class FeatureImpactOut(BaseModel):
     feature: str
     label: str
-    probability_min: float
-    probability_max: float
+    probability_min: float = Field(description="Lowest probability while only this feature varies")
+    probability_max: float = Field(description="Highest probability while only this feature varies")
+    typical_low: float = Field(description="10th percentile while only this feature varies")
+    typical_high: float = Field(description="90th percentile while only this feature varies")
     can_flip: bool = Field(
-        description="True when plausible values for this feature alone can change the verdict"
+        description="True when typical values for this feature alone straddle the threshold"
     )
 
 
 class SensitivityOut(BaseModel):
-    """How much the result could change if the missing inputs took plausible values."""
+    """How much the result could change if the missing inputs took values real patients have."""
 
     baseline_probability: float = Field(
         description="Probability with missing inputs filled by typical training values"
     )
-    probability_min: float
-    probability_max: float
-    can_flip: bool = Field(description="True when plausible values could change the verdict")
-    exhaustive: bool = Field(
-        description="False when scenarios were sampled, so the range is approximate"
+    probability_min: float = Field(description="Lowest probability over all training patterns")
+    probability_max: float = Field(description="Highest probability over all training patterns")
+    typical_low: float = Field(description="10th percentile over training patterns")
+    typical_high: float = Field(description="90th percentile over training patterns")
+    positive_share: float = Field(
+        description="Share of plausible cases at or above the decision threshold"
     )
-    scenarios_evaluated: int
+    verdict_uncertain: bool = Field(
+        description="True when plausible cases disagree about the verdict "
+        "(positive share between 10% and 90%)"
+    )
+    patterns_used: int = Field(description="Number of training patients that supplied values")
     impacts: list[FeatureImpactOut] = Field(description="Missing features, most influential first")
     note: str
 

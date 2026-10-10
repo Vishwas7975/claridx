@@ -1,5 +1,3 @@
-from itertools import product
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -17,6 +15,14 @@ class ThalStub:
         return np.column_stack([1 - positive, positive])
 
 
+class ThalCaStub:
+    """Predicts disease only when thal is 7 and ca is 3 together."""
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        positive = np.where((X["thal"] == 7) & (X["ca"] == 3), 0.9, 0.1)
+        return np.column_stack([1 - positive, positive])
+
+
 @pytest.fixture(scope="module")
 def data():
     return make_heart_like_data()
@@ -26,6 +32,12 @@ def data():
 def forest(data):
     X, y = data
     return build_models(0)["random_forest"].fit(X, y)
+
+
+@pytest.fixture(scope="module")
+def logistic(data):
+    X, y = data
+    return build_models(0)["logistic_regression"].fit(X, y)
 
 
 def _probability(model, patient: pd.DataFrame, **values: float) -> float:
@@ -40,22 +52,24 @@ def test_no_missing_values_means_no_sensitivity(forest, data) -> None:
     assert SensitivityAnalyzer(forest, X).analyze(X.iloc[[0]]) is None
 
 
-def test_verdict_flip_detected_when_decisive_feature_is_missing(data) -> None:
+def test_uncertain_when_decisive_feature_is_missing(data) -> None:
     X, _ = data
     patient = X.iloc[[0]].copy()
     patient["thal"] = np.nan
     result = SensitivityAnalyzer(ThalStub(), X).analyze(patient)
 
+    expected_share = float((X["thal"] == 7).mean())
+    assert 0.1 <= expected_share <= 0.9  # the synthetic data must make this a real test
     assert result is not None
-    assert result.can_flip is True
+    assert result.positive_share == pytest.approx(expected_share)
+    assert result.verdict_uncertain is True
     assert result.baseline_probability == pytest.approx(0.1)
-    assert result.probability_min == pytest.approx(0.1)
-    assert result.probability_max == pytest.approx(0.9)
+    assert result.typical_high == pytest.approx(0.9)
     assert result.impacts[0].feature == "thal"
     assert result.impacts[0].can_flip is True
 
 
-def test_no_flip_when_missing_feature_does_not_matter(data) -> None:
+def test_stable_when_missing_feature_does_not_matter(data) -> None:
     X, _ = data
     patient = X.iloc[[0]].copy()
     patient["thal"] = 3.0
@@ -63,32 +77,68 @@ def test_no_flip_when_missing_feature_does_not_matter(data) -> None:
     result = SensitivityAnalyzer(ThalStub(), X).analyze(patient)
 
     assert result is not None
-    assert result.can_flip is False
+    assert result.positive_share == pytest.approx(0.0)
+    assert result.verdict_uncertain is False
     assert result.impacts[0].spread == pytest.approx(0.0)
+    assert result.impacts[0].can_flip is False
 
 
-def test_exhaustive_range_matches_brute_force(forest, data) -> None:
+def test_rare_extreme_is_not_mistaken_for_typical(data) -> None:
+    """A value seen in only 5% of patients sets the extreme but must not drive the verdict."""
+    X, _ = data
+    background = X.copy()
+    background["thal"] = 3.0
+    background.iloc[:8, background.columns.get_loc("thal")] = 7.0  # 8 of 160 patients
+    patient = X.iloc[[0]].copy()
+    patient["thal"] = np.nan
+
+    result = SensitivityAnalyzer(ThalStub(), background).analyze(patient)
+    assert result is not None
+    assert result.probability_max == pytest.approx(0.9)
+    assert result.typical_high == pytest.approx(0.1)
+    assert result.positive_share == pytest.approx(0.05)
+    assert result.verdict_uncertain is False
+
+
+def test_joint_scenarios_keep_values_of_the_same_patient_together(data) -> None:
+    X, _ = data
+    background = X.copy()
+    half = len(background) // 2
+    background["thal"] = 3.0
+    background["ca"] = 0.0
+    background.iloc[:half, background.columns.get_loc("thal")] = 7.0
+    background.iloc[:half, background.columns.get_loc("ca")] = 3.0
+    patient = X.iloc[[0]].copy()
+    patient["thal"] = np.nan
+    patient["ca"] = np.nan
+
+    result = SensitivityAnalyzer(ThalCaStub(), background).analyze(patient)
+    assert result is not None
+    # Every positive scenario needs thal=7 and ca=3 together, which only half the patients have.
+    assert result.positive_share == pytest.approx(0.5)
+    assert result.probability_max == pytest.approx(0.9)
+
+
+def test_matches_independent_per_patient_computation(logistic, data) -> None:
     X, _ = data
     patient = X.iloc[[3]].copy()
     patient["thal"] = np.nan
     patient["ca"] = np.nan
 
-    thals = sorted(X["thal"].unique())
-    cas = sorted(X["ca"].unique())
-    expected = [_probability(forest, patient)]  # baseline
-    expected += [_probability(forest, patient, thal=t, ca=c) for t, c in product(thals, cas)]
-    expected += [_probability(forest, patient, thal=t) for t in thals]
-    expected += [_probability(forest, patient, ca=c) for c in cas]
+    expected = np.array(
+        [_probability(logistic, patient, thal=row["thal"], ca=row["ca"]) for _, row in X.iterrows()]
+    )
+    result = SensitivityAnalyzer(logistic, X).analyze(patient)
 
-    result = SensitivityAnalyzer(forest, X).analyze(patient)
     assert result is not None
-    assert result.exhaustive is True
-    assert result.probability_min == pytest.approx(min(expected))
-    assert result.probability_max == pytest.approx(max(expected))
+    assert result.patterns_used == len(X)
+    assert result.positive_share == pytest.approx(float(np.mean(expected >= 0.5)))
+    assert result.typical_low == pytest.approx(float(np.percentile(expected, 10)))
+    assert result.typical_high == pytest.approx(float(np.percentile(expected, 90)))
 
 
 @pytest.mark.parametrize("name", ["random_forest", "logistic_regression"])
-def test_baseline_lies_inside_range(name: str, data) -> None:
+def test_ranges_are_nested_and_contain_the_baseline(name: str, data) -> None:
     X, y = data
     model = build_models(0)[name].fit(X, y)
     patient = X.iloc[[5]].copy()
@@ -97,23 +147,10 @@ def test_baseline_lies_inside_range(name: str, data) -> None:
     result = SensitivityAnalyzer(model, X).analyze(patient)
 
     assert result is not None
+    assert result.probability_min <= result.typical_low <= result.typical_high
+    assert result.typical_high <= result.probability_max
     assert result.probability_min <= result.baseline_probability <= result.probability_max
-
-
-def test_large_search_space_is_sampled_deterministically(forest, data) -> None:
-    X, _ = data
-    patient = X.iloc[[0]].copy()
-    for name in ("age", "trestbps", "chol", "thalach", "oldpeak", "cp"):
-        patient[name] = np.nan
-
-    analyzer = SensitivityAnalyzer(forest, X, max_scenarios=200)
-    first = analyzer.analyze(patient)
-    second = analyzer.analyze(patient)
-
-    assert first is not None
-    assert first.exhaustive is False
-    assert 200 < first.scenarios_evaluated <= 230  # 200 joint + at most 29 single-feature rows
-    assert first == second
+    assert 0.0 <= result.positive_share <= 1.0
 
 
 def test_impacts_cover_missing_features_sorted_by_spread(forest, data) -> None:
