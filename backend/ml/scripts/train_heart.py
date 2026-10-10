@@ -56,6 +56,8 @@ def main() -> None:
     print(f"train: {len(X_train)} rows, test: {len(X_test)} rows")
 
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    # Serving needs a background sample for the explainers, without the raw dataset.
+    X_train.to_csv(ARTIFACT_DIR / "background.csv", index=False)
     report: dict[str, dict[str, Any]] = {}
 
     for name, model in build_models(RANDOM_SEED).items():

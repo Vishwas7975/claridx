@@ -17,3 +17,8 @@ Short record of decisions and the reasons behind them.
 | 11 | SHAP contributions are summed from one-hot columns back onto the 13 input features | Clinicians reason about "chest pain type", not `cp_4.0`; summing preserves additivity |
 | 12 | Every explanation carries its `output_space` (probability or log-odds) | Prevents the UI from mislabelling units; RF and LR SHAP values are not on the same scale |
 | 13 | SHAP vs LIME compared by rank correlation, top-k overlap and sign agreement, not raw magnitude | The two methods' magnitudes are not comparable; LIME fidelity (R2) is always reported |
+| 14 | Dependency groups: `ml` = runtime ML libraries (the API needs them), `train` = training-only (`ucimlrepo`) | Supersedes #7: the API now serves models, so it needs the `ml` group |
+| 15 | Per-disease routes (`/api/v1/heart/...`) with per-disease schemas | Inputs differ per disease; adding Diabetes later will not break existing contracts |
+| 16 | Models are loaded once at startup; if artifacts are missing the API still starts and predictions return 503 | Health checks and other routes stay available |
+| 17 | Strict patient input: unknown fields rejected, at least 7 of 13 measurements required | Typos must not become silent "missing" values; near-empty inputs give meaningless predictions |
+| 18 | Serving uses `background.csv` saved with the model artifacts, not the raw dataset | Deployments must not depend on a dataset download |

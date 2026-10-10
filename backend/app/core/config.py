@@ -29,6 +29,8 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    model_artifacts_dir: Path = BACKEND_DIR / "ml" / "artifacts"
+
 
 @lru_cache
 def get_settings() -> Settings:

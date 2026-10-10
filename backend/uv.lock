@@ -88,7 +88,7 @@ wheels = [
 name = "claridx-backend"
 version = "0.1.0"
 source = { virtual = "." }
-default-groups = ["dev", "ml"]
+default-groups = ["dev", "ml", "train"]
 dependencies = [
     { name = "alembic" },
     { name = "cryptography" },
@@ -113,6 +113,8 @@ ml = [
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "shap" },
+]
+train = [
     { name = "ucimlrepo" },
 ]
 
@@ -141,8 +143,8 @@ ml = [
     { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "scipy", specifier = ">=1.18.1" },
     { name = "shap", specifier = ">=0.53.0" },
-    { name = "ucimlrepo", specifier = ">=0.0.7" },
 ]
+train = [{ name = "ucimlrepo", specifier = ">=0.0.7" }]
 
 [[package]]
 name = "click"
