@@ -13,13 +13,13 @@ import joblib
 import numpy as np
 import pandas as pd
 import sklearn
-from sklearn.model_selection import train_test_split
 
 from ml.config import CV_REPEATS, CV_SPLITS, RANDOM_SEED, TEST_SIZE
-from ml.datasets.heart import RAW_FILE, TARGET_RAW, load_raw, sha256_of
+from ml.datasets.heart import RAW_FILE, sha256_of
 from ml.evaluation import cross_validate_model, evaluate_on_holdout
 from ml.paths import ARTIFACTS_DIR
 from ml.pipelines.heart import FEATURES, build_models
+from ml.splits import heart_split
 
 ARTIFACT_DIR = ARTIFACTS_DIR / "heart"
 
@@ -52,13 +52,7 @@ def print_report(report: dict[str, dict[str, Any]]) -> None:
 
 
 def main() -> None:
-    df = load_raw()
-    X = df[FEATURES]
-    y = (df[TARGET_RAW] > 0).astype(int)
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, stratify=y, random_state=RANDOM_SEED
-    )
+    X_train, X_test, y_train, y_test = heart_split()
     print(f"train: {len(X_train)} rows, test: {len(X_test)} rows")
 
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
