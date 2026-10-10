@@ -2,8 +2,10 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -27,6 +29,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+async def validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    """Report which fields failed and why, without echoing the submitted values.
+
+    The default handler includes each rejected value. A NaN or Infinity there makes the
+    JSON response itself fail (HTTP 500), and patient data should not be echoed back anyway.
+    """
+    errors = [
+        {"loc": list(error["loc"]), "msg": error["msg"], "type": error["type"]}
+        for error in exc.errors()
+    ]
+    return JSONResponse(status_code=422, content={"detail": errors})
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
 
@@ -46,6 +61,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
     app.include_router(api_router, prefix=settings.api_v1_prefix)
     return app
 
