@@ -22,3 +22,6 @@ Short record of decisions and the reasons behind them.
 | 16 | Models are loaded once at startup; if artifacts are missing the API still starts and predictions return 503 | Health checks and other routes stay available |
 | 17 | Strict patient input: unknown fields rejected, at least 7 of 13 measurements required | Typos must not become silent "missing" values; near-empty inputs give meaningless predictions |
 | 18 | Serving uses `background.csv` saved with the model artifacts, not the raw dataset | Deployments must not depend on a dataset download |
+| 19 | Missing-data sensitivity: candidate values come only from the training data (observed codes; 5th to 95th percentile quantiles for numeric features) | No clinical values are invented; the range never leaves what the model has seen |
+| 20 | Joint scenarios capped at 2000 (seeded sample beyond that, reported as `exhaustive: false`); single-feature variations always evaluated | Bounded latency and deterministic output; the overall range always contains every per-feature range |
+| 21 | API keeps the field name `imputed`; clients must present imputed contributions as assumptions, and every sensitivity block carries a `note` saying so | Renaming would change the contract for no functional gain; the probability range is the primary signal |

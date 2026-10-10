@@ -78,6 +78,33 @@ class AgreementOut(BaseModel):
     k: int
 
 
+class FeatureImpactOut(BaseModel):
+    feature: str
+    label: str
+    probability_min: float
+    probability_max: float
+    can_flip: bool = Field(
+        description="True when plausible values for this feature alone can change the verdict"
+    )
+
+
+class SensitivityOut(BaseModel):
+    """How much the result could change if the missing inputs took plausible values."""
+
+    baseline_probability: float = Field(
+        description="Probability with missing inputs filled by typical training values"
+    )
+    probability_min: float
+    probability_max: float
+    can_flip: bool = Field(description="True when plausible values could change the verdict")
+    exhaustive: bool = Field(
+        description="False when scenarios were sampled, so the range is approximate"
+    )
+    scenarios_evaluated: int
+    impacts: list[FeatureImpactOut] = Field(description="Missing features, most influential first")
+    note: str
+
+
 class PredictionResponse(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
@@ -92,6 +119,10 @@ class PredictionResponse(BaseModel):
     shap: ExplanationOut
     lime: ExplanationOut
     agreement: AgreementOut
+    sensitivity: SensitivityOut | None = Field(
+        default=None,
+        description="Present only when some inputs were missing",
+    )
     disclaimer: str
 
 

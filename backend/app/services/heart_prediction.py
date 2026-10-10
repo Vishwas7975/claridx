@@ -7,20 +7,28 @@ from app.schemas.heart import (
     AgreementOut,
     ContributionOut,
     ExplanationOut,
+    FeatureImpactOut,
     PatientInput,
     PredictionRequest,
     PredictionResponse,
+    SensitivityOut,
 )
 from app.services.model_registry import ModelRegistry
+from ml.config import DECISION_THRESHOLD
 from ml.explain import Explanation, compare
 from ml.pipelines.heart import FEATURES
+from ml.sensitivity import SensitivityResult
 
-DECISION_THRESHOLD = 0.5
 LOW_FIDELITY_THRESHOLD = 0.5
 DISCLAIMER = (
     "Decision support only, not a diagnosis. Trained on a small public research dataset "
     "(UCI Cleveland, 303 patients) and not validated for clinical use. Probabilities are "
     "raw model outputs and have not been calibrated."
+)
+SENSITIVITY_NOTE = (
+    "Missing inputs are unknown, not normal. Contributions marked imputed are assumptions, "
+    "not evidence. The range shows the probability across plausible values taken from the "
+    "training data."
 )
 
 
@@ -50,6 +58,40 @@ def _explanation_out(explanation: Explanation) -> ExplanationOut:
     )
 
 
+def _sensitivity_out(result: SensitivityResult) -> SensitivityOut:
+    return SensitivityOut(
+        baseline_probability=result.baseline_probability,
+        probability_min=result.probability_min,
+        probability_max=result.probability_max,
+        can_flip=result.can_flip,
+        exhaustive=result.exhaustive,
+        scenarios_evaluated=result.scenarios_evaluated,
+        impacts=[
+            FeatureImpactOut(
+                feature=item.feature,
+                label=LABELS[item.feature],
+                probability_min=item.probability_min,
+                probability_max=item.probability_max,
+                can_flip=item.can_flip,
+            )
+            for item in result.impacts
+        ],
+        note=SENSITIVITY_NOTE,
+    )
+
+
+def sensitivity_warning(result: SensitivityResult) -> str | None:
+    """A warning naming the most influential missing input, only if the verdict can flip."""
+    if not result.can_flip or not result.impacts:
+        return None
+    lead = result.impacts[0]
+    return (
+        "The predicted outcome depends on missing measurements. The most influential is "
+        f"{LABELS[lead.feature]}: the probability ranges from {lead.probability_min:.2f} "
+        f"to {lead.probability_max:.2f} across plausible values."
+    )
+
+
 def _range_warnings(frame: pd.DataFrame, ranges: dict[str, tuple[float, float]]) -> list[str]:
     warnings = []
     for feature, (low, high) in ranges.items():
@@ -75,6 +117,13 @@ class HeartPredictionService:
         agreement = compare(shap_result, lime_result)
         probability = shap_result.probability
 
+        sensitivity = loaded.sensitivity.analyze(frame)
+        warnings = _range_warnings(frame, self._registry.training_ranges)
+        if sensitivity is not None:
+            flip_warning = sensitivity_warning(sensitivity)
+            if flip_warning is not None:
+                warnings.append(flip_warning)
+
         return PredictionResponse(
             model_name=request.model_name,
             model_version=self._registry.version,
@@ -83,7 +132,7 @@ class HeartPredictionService:
             predicted_positive=probability >= DECISION_THRESHOLD,
             calibrated=False,
             imputed_features=[f for f in FEATURES if pd.isna(frame.iloc[0][f])],
-            warnings=_range_warnings(frame, self._registry.training_ranges),
+            warnings=warnings,
             shap=_explanation_out(shap_result),
             lime=_explanation_out(lime_result),
             agreement=AgreementOut(
@@ -92,5 +141,6 @@ class HeartPredictionService:
                 sign_agreement=agreement.sign_agreement,
                 k=agreement.k,
             ),
+            sensitivity=None if sensitivity is None else _sensitivity_out(sensitivity),
             disclaimer=DISCLAIMER,
         )

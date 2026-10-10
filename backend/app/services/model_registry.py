@@ -12,6 +12,7 @@ from sklearn.pipeline import Pipeline
 
 from ml.explain import LimeExplainer, ShapExplainer
 from ml.pipelines.heart import FEATURES, NUMERIC_FEATURES, ORDINAL_FEATURES
+from ml.sensitivity import SensitivityAnalyzer
 
 SERVED_MODELS = ("random_forest", "logistic_regression")
 PRIMARY_MODEL = "random_forest"
@@ -29,6 +30,7 @@ class LoadedModel:
     pipeline: Pipeline
     shap: ShapExplainer
     lime: LimeExplainer
+    sensitivity: SensitivityAnalyzer
 
 
 class ModelRegistry:
@@ -60,6 +62,7 @@ class ModelRegistry:
                 pipeline=pipeline,
                 shap=ShapExplainer(pipeline, background),
                 lime=LimeExplainer(pipeline, background, num_samples=lime_samples),
+                sensitivity=SensitivityAnalyzer(pipeline, background),
             )
             for name, pipeline in pipelines.items()
         }
