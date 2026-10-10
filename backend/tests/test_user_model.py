@@ -33,3 +33,12 @@ def test_email_must_be_unique() -> None:
         with pytest.raises(IntegrityError):
             db.flush()
         db.rollback()  # nothing is ever committed by this test
+
+
+def test_user_repr_is_readable() -> None:
+    user = User(
+        id=1, email="a@example.com", full_name="A", hashed_password="x", role=UserRole.DOCTOR
+    )
+    text = repr(user)
+    assert "a@example.com" in text
+    assert "doctor" in text

@@ -165,3 +165,12 @@ def test_impacts_cover_missing_features_sorted_by_spread(forest, data) -> None:
     assert {impact.feature for impact in result.impacts} == set(missing)
     spreads = [impact.spread for impact in result.impacts]
     assert spreads == sorted(spreads, reverse=True)
+
+
+def test_no_sensitivity_when_no_training_patient_has_the_missing_values(forest, data) -> None:
+    X, _ = data
+    background = X.copy()
+    background["thal"] = np.nan
+    patient = X.iloc[[0]].copy()
+    patient["thal"] = np.nan
+    assert SensitivityAnalyzer(forest, background).analyze(patient) is None
