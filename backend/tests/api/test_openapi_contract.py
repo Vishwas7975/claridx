@@ -1,6 +1,12 @@
 import json
 
-from app.export_openapi import DEFAULT_TARGET, export
+from app.export_openapi import (
+    DEFAULT_TARGET,
+    FEATURES_TARGET,
+    current_features,
+    export,
+    export_features,
+)
 from app.main import app
 
 
@@ -31,3 +37,21 @@ def test_committed_frontend_schema_is_current() -> None:
 def test_export_writes_a_loadable_schema(tmp_path) -> None:
     target = export(tmp_path / "schema.json")
     assert json.loads(target.read_text()) == _current_schema()
+
+
+def test_committed_features_fixture_is_current() -> None:
+    committed = json.loads(FEATURES_TARGET.read_text())
+    assert committed == json.loads(json.dumps(current_features())), (
+        "The feature specs changed. Run `npm run api:sync` in frontend/ and commit the result."
+    )
+
+
+def test_every_number_feature_declares_a_step() -> None:
+    for feature in current_features()["features"]:
+        if feature["kind"] == "number":
+            assert feature["step"] is not None, feature["name"]
+
+
+def test_export_features_creates_missing_folders(tmp_path) -> None:
+    target = export_features(tmp_path / "nested" / "features.json")
+    assert json.loads(target.read_text()) == json.loads(json.dumps(current_features()))

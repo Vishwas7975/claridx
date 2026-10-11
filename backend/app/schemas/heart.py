@@ -146,6 +146,7 @@ class FeatureSpecOut(BaseModel):
     unit: str | None
     minimum: float | None
     maximum: float | None
+    step: float | None
     options: list[OptionOut]
 
 

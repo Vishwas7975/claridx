@@ -222,6 +222,8 @@ export interface components {
             name: string;
             /** Options */
             options: components["schemas"]["OptionOut"][];
+            /** Step */
+            step: number | null;
             /** Unit */
             unit: string | null;
         };

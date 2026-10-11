@@ -22,11 +22,14 @@ class FeatureSpec:
     unit: str | None = None
     minimum: float | None = None
     maximum: float | None = None
+    step: float | None = None  # increment for number inputs
     options: tuple[Option, ...] = ()
 
 
 FEATURE_SPECS: tuple[FeatureSpec, ...] = (
-    FeatureSpec("age", "Age", "number", "Age in years", unit="years", minimum=18, maximum=120),
+    FeatureSpec(
+        "age", "Age", "number", "Age in years", unit="years", minimum=18, maximum=120, step=1
+    ),
     FeatureSpec(
         "sex",
         "Sex",
@@ -54,6 +57,7 @@ FEATURE_SPECS: tuple[FeatureSpec, ...] = (
         unit="mm Hg",
         minimum=50,
         maximum=300,
+        step=1,
     ),
     FeatureSpec(
         "chol",
@@ -63,6 +67,7 @@ FEATURE_SPECS: tuple[FeatureSpec, ...] = (
         unit="mg/dl",
         minimum=50,
         maximum=700,
+        step=1,
     ),
     FeatureSpec(
         "fbs",
@@ -90,6 +95,7 @@ FEATURE_SPECS: tuple[FeatureSpec, ...] = (
         unit="bpm",
         minimum=40,
         maximum=250,
+        step=1,
     ),
     FeatureSpec(
         "exang",
@@ -105,6 +111,7 @@ FEATURE_SPECS: tuple[FeatureSpec, ...] = (
         "ST depression induced by exercise relative to rest",
         minimum=0,
         maximum=10,
+        step=0.1,
     ),
     FeatureSpec(
         "slope",
@@ -120,6 +127,7 @@ FEATURE_SPECS: tuple[FeatureSpec, ...] = (
         "Number of major vessels (0 to 3) coloured by fluoroscopy",
         minimum=0,
         maximum=3,
+        step=1,
     ),
     FeatureSpec(
         "thal",

@@ -245,6 +245,17 @@
             "title": "Options",
             "type": "array"
           },
+          "step": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
           "unit": {
             "anyOf": [
               {
@@ -265,6 +276,7 @@
           "unit",
           "minimum",
           "maximum",
+          "step",
           "options"
         ],
         "title": "FeatureSpecOut",

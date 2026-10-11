@@ -1,0 +1,231 @@
+{
+  "features": [
+    {
+      "description": "Age in years",
+      "kind": "number",
+      "label": "Age",
+      "maximum": 120.0,
+      "minimum": 18.0,
+      "name": "age",
+      "options": [],
+      "step": 1.0,
+      "unit": "years"
+    },
+    {
+      "description": "Sex as recorded in the dataset",
+      "kind": "category",
+      "label": "Sex",
+      "maximum": null,
+      "minimum": null,
+      "name": "sex",
+      "options": [
+        {
+          "label": "Female",
+          "value": 0
+        },
+        {
+          "label": "Male",
+          "value": 1
+        }
+      ],
+      "step": null,
+      "unit": null
+    },
+    {
+      "description": "Type of chest pain reported",
+      "kind": "category",
+      "label": "Chest pain type",
+      "maximum": null,
+      "minimum": null,
+      "name": "cp",
+      "options": [
+        {
+          "label": "Typical angina",
+          "value": 1
+        },
+        {
+          "label": "Atypical angina",
+          "value": 2
+        },
+        {
+          "label": "Non-anginal pain",
+          "value": 3
+        },
+        {
+          "label": "Asymptomatic",
+          "value": 4
+        }
+      ],
+      "step": null,
+      "unit": null
+    },
+    {
+      "description": "Resting blood pressure on admission",
+      "kind": "number",
+      "label": "Resting blood pressure",
+      "maximum": 300.0,
+      "minimum": 50.0,
+      "name": "trestbps",
+      "options": [],
+      "step": 1.0,
+      "unit": "mm Hg"
+    },
+    {
+      "description": "Serum cholesterol",
+      "kind": "number",
+      "label": "Serum cholesterol",
+      "maximum": 700.0,
+      "minimum": 50.0,
+      "name": "chol",
+      "options": [],
+      "step": 1.0,
+      "unit": "mg/dl"
+    },
+    {
+      "description": "Whether fasting blood sugar exceeds 120 mg/dl",
+      "kind": "category",
+      "label": "Fasting blood sugar > 120 mg/dl",
+      "maximum": null,
+      "minimum": null,
+      "name": "fbs",
+      "options": [
+        {
+          "label": "No",
+          "value": 0
+        },
+        {
+          "label": "Yes",
+          "value": 1
+        }
+      ],
+      "step": null,
+      "unit": null
+    },
+    {
+      "description": "Resting electrocardiographic result",
+      "kind": "category",
+      "label": "Resting ECG result",
+      "maximum": null,
+      "minimum": null,
+      "name": "restecg",
+      "options": [
+        {
+          "label": "Normal",
+          "value": 0
+        },
+        {
+          "label": "ST-T wave abnormality",
+          "value": 1
+        },
+        {
+          "label": "Left ventricular hypertrophy",
+          "value": 2
+        }
+      ],
+      "step": null,
+      "unit": null
+    },
+    {
+      "description": "Maximum heart rate achieved during the exercise test",
+      "kind": "number",
+      "label": "Maximum heart rate achieved",
+      "maximum": 250.0,
+      "minimum": 40.0,
+      "name": "thalach",
+      "options": [],
+      "step": 1.0,
+      "unit": "bpm"
+    },
+    {
+      "description": "Whether exercise induced angina",
+      "kind": "category",
+      "label": "Exercise-induced angina",
+      "maximum": null,
+      "minimum": null,
+      "name": "exang",
+      "options": [
+        {
+          "label": "No",
+          "value": 0
+        },
+        {
+          "label": "Yes",
+          "value": 1
+        }
+      ],
+      "step": null,
+      "unit": null
+    },
+    {
+      "description": "ST depression induced by exercise relative to rest",
+      "kind": "number",
+      "label": "ST depression induced by exercise",
+      "maximum": 10.0,
+      "minimum": 0.0,
+      "name": "oldpeak",
+      "options": [],
+      "step": 0.1,
+      "unit": null
+    },
+    {
+      "description": "Slope of the peak exercise ST segment",
+      "kind": "category",
+      "label": "Slope of peak exercise ST segment",
+      "maximum": null,
+      "minimum": null,
+      "name": "slope",
+      "options": [
+        {
+          "label": "Upsloping",
+          "value": 1
+        },
+        {
+          "label": "Flat",
+          "value": 2
+        },
+        {
+          "label": "Downsloping",
+          "value": 3
+        }
+      ],
+      "step": null,
+      "unit": null
+    },
+    {
+      "description": "Number of major vessels (0 to 3) coloured by fluoroscopy",
+      "kind": "number",
+      "label": "Major vessels coloured by fluoroscopy",
+      "maximum": 3.0,
+      "minimum": 0.0,
+      "name": "ca",
+      "options": [],
+      "step": 1.0,
+      "unit": null
+    },
+    {
+      "description": "Thallium stress test finding",
+      "kind": "category",
+      "label": "Thallium stress test result",
+      "maximum": null,
+      "minimum": null,
+      "name": "thal",
+      "options": [
+        {
+          "label": "Normal",
+          "value": 3
+        },
+        {
+          "label": "Fixed defect",
+          "value": 6
+        },
+        {
+          "label": "Reversible defect",
+          "value": 7
+        }
+      ],
+      "step": null,
+      "unit": null
+    }
+  ],
+  "min_measurements": 7
+}

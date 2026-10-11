@@ -19,7 +19,8 @@ def _accepts(name: str, value: float) -> bool:
 @pytest.mark.parametrize("spec", FEATURE_SPECS, ids=lambda spec: spec.name)
 def test_validation_matches_feature_spec(spec) -> None:
     if spec.kind == "number":
-        step = 0.1 if spec.name == "oldpeak" else 1
+        step = spec.step
+        assert step is not None
         assert _accepts(spec.name, spec.minimum)
         assert _accepts(spec.name, spec.maximum)
         assert not _accepts(spec.name, spec.minimum - step)
