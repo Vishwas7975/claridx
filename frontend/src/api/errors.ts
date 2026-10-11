@@ -27,7 +27,8 @@ function toIssue(raw: unknown): FieldIssue | null {
 
 /**
  * The API answers errors in two shapes: a list of validation issues (HTTP 422) and a plain
- * string (for example HTTP 503 when the models are not loaded).
+ * string (for example HTTP 503 when the models are not loaded). Responses without a usable
+ * body, such as a proxy's 502 when the backend is down, are described by status class.
  */
 export function toApiError(error: unknown, status: number): ApiError {
   const detail =
@@ -36,6 +37,18 @@ export function toApiError(error: unknown, status: number): ApiError {
   if (Array.isArray(detail)) {
     const issues = detail.map(toIssue).filter((issue): issue is FieldIssue => issue !== null)
     return new ApiError('The server rejected some of the values.', status, issues)
+  }
+  if (status === 502 || status === 503 || status === 504) {
+    return new ApiError(
+      'The server is not reachable right now. Check that the backend is running and try again.',
+      status,
+    )
+  }
+  if (status >= 500) {
+    return new ApiError(
+      `The server reported an internal error (HTTP ${status}). Try again in a moment.`,
+      status,
+    )
   }
   return new ApiError(`The request failed (HTTP ${status}).`, status)
 }

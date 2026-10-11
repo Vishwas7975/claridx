@@ -17,7 +17,7 @@ describe('toApiError', () => {
           {
             loc: ['body', 'patient', 'chol'],
             msg: 'Input should be less than or equal to 700',
-            type: 'x',
+            type: 'less_than_equal',
           },
           {
             loc: ['body', 'patient'],
@@ -40,9 +40,21 @@ describe('toApiError', () => {
     expect(error.issues).toEqual([])
   })
 
-  it('falls back to the status code when the body has no usable detail', () => {
-    expect(toApiError(undefined, 500).message).toBe('The request failed (HTTP 500).')
-    expect(toApiError({ other: 1 }, 502).message).toBe('The request failed (HTTP 502).')
+  it('describes gateway statuses without a usable body as the server being unreachable', () => {
+    for (const status of [502, 503, 504]) {
+      expect(toApiError(undefined, status).message).toMatch(/not reachable right now/)
+      expect(toApiError('Bad Gateway', status).message).toMatch(/not reachable right now/)
+    }
+  })
+
+  it('reports other server errors as internal errors', () => {
+    expect(toApiError(undefined, 500).message).toBe(
+      'The server reported an internal error (HTTP 500). Try again in a moment.',
+    )
+  })
+
+  it('keeps a generic message for other statuses', () => {
+    expect(toApiError({ other: 1 }, 404).message).toBe('The request failed (HTTP 404).')
   })
 })
 

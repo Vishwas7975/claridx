@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { heartFixture } from '../../test/fixtures'
-import { describeValue, fieldLabel, formatPercent, formatSigned } from './format'
+import {
+  describeShare,
+  describeValue,
+  fieldLabel,
+  formatPercent,
+  formatSigned,
+  wholePercent,
+} from './format'
 
 function featureSpec(name: string) {
   const found = heartFixture.features.find((spec) => spec.name === name)
@@ -19,6 +26,21 @@ describe('formatting', () => {
   it('formats probabilities as percentages', () => {
     expect(formatPercent(0.615)).toBe('61.5%')
     expect(formatPercent(0.996, 0)).toBe('100%')
+  })
+
+  it('never rounds a near-certain percentage to 0% or 100%', () => {
+    expect(wholePercent(0.996)).toBe('99%')
+    expect(wholePercent(0.004)).toBe('1%')
+    expect(wholePercent(0.58)).toBe('58%')
+    expect(wholePercent(1)).toBe('100%')
+    expect(wholePercent(0)).toBe('0%')
+  })
+
+  it('describes shares of cases in words', () => {
+    expect(describeShare(1)).toBe('all')
+    expect(describeShare(0)).toBe('none')
+    expect(describeShare(0.999)).toBe('99%')
+    expect(describeShare(0.58)).toBe('58%')
   })
 
   it('describes values in words', () => {
