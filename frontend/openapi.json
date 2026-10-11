@@ -1,0 +1,932 @@
+{
+  "components": {
+    "schemas": {
+      "AgreementOut": {
+        "properties": {
+          "k": {
+            "title": "K",
+            "type": "integer"
+          },
+          "rank_correlation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Correlation"
+          },
+          "sign_agreement": {
+            "title": "Sign Agreement",
+            "type": "number"
+          },
+          "top_k_overlap": {
+            "title": "Top K Overlap",
+            "type": "number"
+          }
+        },
+        "required": [
+          "rank_correlation",
+          "top_k_overlap",
+          "sign_agreement",
+          "k"
+        ],
+        "title": "AgreementOut",
+        "type": "object"
+      },
+      "ContributionOut": {
+        "properties": {
+          "contribution": {
+            "description": "Positive pushes toward disease, negative away",
+            "title": "Contribution",
+            "type": "number"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "imputed": {
+            "description": "True when the model had to fill this input in",
+            "title": "Imputed",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Value as entered; null when it was missing",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "feature",
+          "label",
+          "value",
+          "imputed",
+          "contribution"
+        ],
+        "title": "ContributionOut",
+        "type": "object"
+      },
+      "ExplanationOut": {
+        "properties": {
+          "base_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SHAP only: output when no feature is known",
+            "title": "Base Value"
+          },
+          "contributions": {
+            "description": "Largest absolute effect first",
+            "items": {
+              "$ref": "#/components/schemas/ContributionOut"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "fidelity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "LIME only: R2 of the local surrogate model",
+            "title": "Fidelity"
+          },
+          "low_confidence": {
+            "description": "True when the explanation is a weak local fit",
+            "title": "Low Confidence",
+            "type": "boolean"
+          },
+          "method": {
+            "enum": [
+              "shap",
+              "lime"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "output_space": {
+            "enum": [
+              "probability",
+              "log_odds"
+            ],
+            "title": "Output Space",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "output_space",
+          "base_value",
+          "fidelity",
+          "low_confidence",
+          "contributions"
+        ],
+        "title": "ExplanationOut",
+        "type": "object"
+      },
+      "FeatureImpactOut": {
+        "properties": {
+          "can_flip": {
+            "description": "True when typical values for this feature alone straddle the threshold",
+            "title": "Can Flip",
+            "type": "boolean"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "probability_max": {
+            "description": "Highest probability while only this feature varies",
+            "title": "Probability Max",
+            "type": "number"
+          },
+          "probability_min": {
+            "description": "Lowest probability while only this feature varies",
+            "title": "Probability Min",
+            "type": "number"
+          },
+          "typical_high": {
+            "description": "90th percentile while only this feature varies",
+            "title": "Typical High",
+            "type": "number"
+          },
+          "typical_low": {
+            "description": "10th percentile while only this feature varies",
+            "title": "Typical Low",
+            "type": "number"
+          }
+        },
+        "required": [
+          "feature",
+          "label",
+          "probability_min",
+          "probability_max",
+          "typical_low",
+          "typical_high",
+          "can_flip"
+        ],
+        "title": "FeatureImpactOut",
+        "type": "object"
+      },
+      "FeatureSpecOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "number",
+              "category"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum"
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "kind",
+          "description",
+          "unit",
+          "minimum",
+          "maximum",
+          "options"
+        ],
+        "title": "FeatureSpecOut",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ModelInfo": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "primary",
+              "glass_box_reference"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "description"
+        ],
+        "title": "ModelInfo",
+        "type": "object"
+      },
+      "ModelsResponse": {
+        "properties": {
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelInfo"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "primary": {
+            "title": "Primary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_version",
+          "primary",
+          "models"
+        ],
+        "title": "ModelsResponse",
+        "type": "object"
+      },
+      "OptionOut": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "OptionOut",
+        "type": "object"
+      },
+      "PatientInput": {
+        "additionalProperties": false,
+        "description": "Measurements for one patient. Every field is optional, but at least 7 are required.\n\nValue codes and labels are listed by GET /api/v1/heart/features.",
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "maximum": 120.0,
+                "minimum": 18.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Age in years",
+            "title": "Age"
+          },
+          "ca": {
+            "anyOf": [
+              {
+                "maximum": 3.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Major vessels coloured (0 to 3)",
+            "title": "Ca"
+          },
+          "chol": {
+            "anyOf": [
+              {
+                "maximum": 700.0,
+                "minimum": 50.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Serum cholesterol, mg/dl",
+            "title": "Chol"
+          },
+          "cp": {
+            "anyOf": [
+              {
+                "enum": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chest pain type (1 to 4)",
+            "title": "Cp"
+          },
+          "exang": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 = exercise-induced angina",
+            "title": "Exang"
+          },
+          "fbs": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1 = fasting blood sugar > 120",
+            "title": "Fbs"
+          },
+          "oldpeak": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ST depression induced by exercise",
+            "title": "Oldpeak"
+          },
+          "restecg": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1,
+                  2
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resting ECG result",
+            "title": "Restecg"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "enum": [
+                  0,
+                  1
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "0 = female, 1 = male",
+            "title": "Sex"
+          },
+          "slope": {
+            "anyOf": [
+              {
+                "enum": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Peak exercise ST slope",
+            "title": "Slope"
+          },
+          "thal": {
+            "anyOf": [
+              {
+                "enum": [
+                  3,
+                  6,
+                  7
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Thallium test result",
+            "title": "Thal"
+          },
+          "thalach": {
+            "anyOf": [
+              {
+                "maximum": 250.0,
+                "minimum": 40.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum heart rate achieved, bpm",
+            "title": "Thalach"
+          },
+          "trestbps": {
+            "anyOf": [
+              {
+                "maximum": 300.0,
+                "minimum": 50.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resting blood pressure, mm Hg",
+            "title": "Trestbps"
+          }
+        },
+        "title": "PatientInput",
+        "type": "object"
+      },
+      "PredictionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "model_name": {
+            "default": "random_forest",
+            "enum": [
+              "random_forest",
+              "logistic_regression"
+            ],
+            "title": "Model Name",
+            "type": "string"
+          },
+          "patient": {
+            "$ref": "#/components/schemas/PatientInput"
+          }
+        },
+        "required": [
+          "patient"
+        ],
+        "title": "PredictionRequest",
+        "type": "object"
+      },
+      "PredictionResponse": {
+        "properties": {
+          "agreement": {
+            "$ref": "#/components/schemas/AgreementOut"
+          },
+          "calibrated": {
+            "title": "Calibrated",
+            "type": "boolean"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "imputed_features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Imputed Features",
+            "type": "array"
+          },
+          "lime": {
+            "$ref": "#/components/schemas/ExplanationOut"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "predicted_positive": {
+            "title": "Predicted Positive",
+            "type": "boolean"
+          },
+          "probability": {
+            "description": "Predicted probability of heart disease",
+            "title": "Probability",
+            "type": "number"
+          },
+          "sensitivity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SensitivityOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present only when some inputs were missing"
+          },
+          "shap": {
+            "$ref": "#/components/schemas/ExplanationOut"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model_name",
+          "model_version",
+          "probability",
+          "threshold",
+          "predicted_positive",
+          "calibrated",
+          "imputed_features",
+          "warnings",
+          "shap",
+          "lime",
+          "agreement",
+          "disclaimer"
+        ],
+        "title": "PredictionResponse",
+        "type": "object"
+      },
+      "SensitivityOut": {
+        "description": "How much the result could change if the missing inputs took values real patients have.",
+        "properties": {
+          "baseline_probability": {
+            "description": "Probability with missing inputs filled by typical training values",
+            "title": "Baseline Probability",
+            "type": "number"
+          },
+          "impacts": {
+            "description": "Missing features, most influential first",
+            "items": {
+              "$ref": "#/components/schemas/FeatureImpactOut"
+            },
+            "title": "Impacts",
+            "type": "array"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "patterns_used": {
+            "description": "Number of training patients that supplied values",
+            "title": "Patterns Used",
+            "type": "integer"
+          },
+          "positive_share": {
+            "description": "Share of plausible cases at or above the decision threshold",
+            "title": "Positive Share",
+            "type": "number"
+          },
+          "probability_max": {
+            "description": "Highest probability over all training patterns",
+            "title": "Probability Max",
+            "type": "number"
+          },
+          "probability_min": {
+            "description": "Lowest probability over all training patterns",
+            "title": "Probability Min",
+            "type": "number"
+          },
+          "typical_high": {
+            "description": "90th percentile over training patterns",
+            "title": "Typical High",
+            "type": "number"
+          },
+          "typical_low": {
+            "description": "10th percentile over training patterns",
+            "title": "Typical Low",
+            "type": "number"
+          },
+          "verdict_uncertain": {
+            "description": "True when plausible cases disagree about the verdict (positive share between 10% and 90%)",
+            "title": "Verdict Uncertain",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "baseline_probability",
+          "probability_min",
+          "probability_max",
+          "typical_low",
+          "typical_high",
+          "positive_share",
+          "verdict_uncertain",
+          "patterns_used",
+          "impacts",
+          "note"
+        ],
+        "title": "SensitivityOut",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "ClariDx API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "description": "Liveness probe: the API process is up.",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Api V1 Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/db": {
+      "get": {
+        "description": "Readiness probe: the API can reach the database.",
+        "operationId": "health_db_api_v1_health_db_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Db Api V1 Health Db Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Db",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/heart/features": {
+      "get": {
+        "description": "Input features with labels, units and allowed values, in form display order.",
+        "operationId": "list_features_api_v1_heart_features_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureSpecOut"
+                  },
+                  "title": "Response List Features Api V1 Heart Features Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Features",
+        "tags": [
+          "heart disease"
+        ]
+      }
+    },
+    "/api/v1/heart/models": {
+      "get": {
+        "operationId": "list_models_api_v1_heart_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Models",
+        "tags": [
+          "heart disease"
+        ]
+      }
+    },
+    "/api/v1/heart/predictions": {
+      "post": {
+        "description": "Predict heart disease risk and explain it with SHAP and LIME (not stored).",
+        "operationId": "create_prediction_api_v1_heart_predictions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Prediction",
+        "tags": [
+          "heart disease"
+        ]
+      }
+    }
+  }
+}
