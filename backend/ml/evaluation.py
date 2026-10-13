@@ -1,11 +1,14 @@
 """Evaluation helpers: repeated cross-validation, hold-out metrics, bootstrap CI."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.metrics import (
     accuracy_score,
     brier_score_loss,
+    confusion_matrix,
     f1_score,
     precision_score,
     recall_score,
@@ -58,11 +61,12 @@ def bootstrap_auc_ci(
 
 def evaluate_on_holdout(
     model: BaseEstimator, X_test: pd.DataFrame, y_test: pd.Series, seed: int
-) -> dict[str, float]:
+) -> dict[str, Any]:
     y_true = y_test.to_numpy()
     proba = model.predict_proba(X_test)[:, 1]
     pred = (proba >= 0.5).astype(int)
     ci_low, ci_high = bootstrap_auc_ci(y_true, proba, seed)
+    cm = confusion_matrix(y_true, pred, labels=[0, 1])
     return {
         "accuracy": float(accuracy_score(y_true, pred)),
         "precision": float(precision_score(y_true, pred, zero_division=0)),
@@ -72,4 +76,10 @@ def evaluate_on_holdout(
         "roc_auc_ci_low": ci_low,
         "roc_auc_ci_high": ci_high,
         "brier": float(brier_score_loss(y_true, proba)),
+        "confusion_matrix": {
+            "tn": int(cm[0, 0]),
+            "fp": int(cm[0, 1]),
+            "fn": int(cm[1, 0]),
+            "tp": int(cm[1, 1]),
+        },
     }

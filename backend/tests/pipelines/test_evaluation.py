@@ -53,6 +53,7 @@ def test_holdout_metrics_match_hand_computation() -> None:
     assert result["f1"] == pytest.approx(0.5)
     assert result["roc_auc"] == pytest.approx(0.75)  # 3 of 4 positive/negative pairs ranked right
     assert result["brier"] == pytest.approx(0.185)  # (0.01 + 0.36 + 0.36 + 0.01) / 4
+    assert result["confusion_matrix"] == {"tn": 1, "fp": 1, "fn": 1, "tp": 1}
     assert 0.0 <= result["roc_auc_ci_low"] <= result["roc_auc_ci_high"] <= 1.0
 
 
