@@ -235,3 +235,178 @@ button:disabled {
   border-top: 1px solid var(--border);
   font-size: 0.875rem;
 }
+
+/* === Checkpoint 10b-2b: result visualizations === */
+
+/* Probability bar */
+.prob-bar-wrap {
+  position: relative;
+  margin: 0.75rem 0;
+}
+
+.prob-bar {
+  height: 1.25rem;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.prob-bar__fill {
+  height: 100%;
+  background: var(--primary);
+  max-width: 100%;
+}
+
+/* Positioned on .prob-bar-wrap (position: relative) so it overlays the bar */
+.prob-bar__threshold {
+  position: absolute;
+  top: 0;
+  height: 1.25rem;
+  width: 2px;
+  background: var(--text);
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+.prob-bar__legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.375rem;
+}
+
+/* Explanation grid (SHAP + LIME side by side above 48rem) */
+.explain-grid {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0 0;
+}
+
+@media (min-width: 48rem) {
+  .explain-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.explain-col__title {
+  margin: 0 0 0.125rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.explain-col__space {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.explain-col__legend {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.explain-empty {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.explain-base {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+/* Contribution rows */
+.contrib-row {
+  padding: 0.375rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.contrib-row--imputed {
+  border-top-style: dashed;
+  color: var(--muted);
+}
+
+.contrib-row__label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.contrib-row__assumed {
+  font-style: italic;
+  font-size: 0.8125rem;
+}
+
+.contrib-row__value {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.contrib-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* The track takes all available flex space; bar inside is a percentage of the track */
+.contrib-bar-track {
+  flex: 1;
+  height: 0.625rem;
+  background: var(--bg);
+  border-radius: 2px;
+}
+
+.contrib-bar {
+  height: 100%;
+  border-radius: 2px;
+  max-width: 100%;
+}
+
+.contrib-bar--pos {
+  background: var(--primary);
+}
+
+.contrib-bar--neg {
+  background: var(--muted);
+}
+
+.contrib-bar__signed {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 4.5rem;
+  text-align: right;
+}
+
+/* Agreement / LIME fidelity */
+.agreement {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.agreement p {
+  margin: 0.125rem 0;
+}
+
+/* Badge (reused for ⚠ low local fit) */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge--warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}

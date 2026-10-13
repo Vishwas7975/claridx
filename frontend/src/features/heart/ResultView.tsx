@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import type { PredictionResponse, Sensitivity } from '../../api/types'
-import { describeShare, formatPercent, wholePercent } from './format'
+import type { Contribution, Explanation, PredictionResponse, Sensitivity } from '../../api/types'
+import { describeShare, describeValue, formatPercent, formatSigned, wholePercent } from './format'
 
 function sensitivityText(sensitivity: Sensitivity, missing: number): string {
   const lead = sensitivity.verdict_uncertain ? 'The verdict is uncertain. ' : ''
@@ -12,6 +12,116 @@ function sensitivityText(sensitivity: Sensitivity, missing: number): string {
   return (
     `${lead}Because ${missing} ${noun} missing, the result was re-computed with values real ` +
     `training patients have: ${portion} of those cases are positive, typically ${low} to ${high}.`
+  )
+}
+
+function ProbabilityBar({ probability, threshold }: { probability: number; threshold: number }) {
+  const fillPct = Math.min(100, Math.max(0, probability * 100))
+  const thresholdPct = Math.min(100, Math.max(0, threshold * 100))
+  return (
+    <div className="prob-bar-wrap">
+      <div
+        className="prob-bar"
+        role="img"
+        aria-label={`Probability bar: ${formatPercent(probability)} estimated probability of heart disease`}
+      >
+        <div className="prob-bar__fill" style={{ width: `${fillPct}%` }} />
+      </div>
+      {/* Threshold marker sits on prob-bar-wrap (position: relative) at the threshold % */}
+      <div
+        className="prob-bar__threshold"
+        style={{ left: `${thresholdPct}%` }}
+        aria-hidden="true"
+      />
+      <div className="prob-bar__legend" aria-hidden="true">
+        <span>0%</span>
+        <span>Decision threshold: {formatPercent(threshold, 0)}</span>
+        <span>100%</span>
+      </div>
+    </div>
+  )
+}
+
+function ContributionRow({
+  contribution: c,
+  maxAbs,
+}: {
+  contribution: Contribution
+  maxAbs: number
+}) {
+  const barPct = maxAbs > 0 ? (Math.abs(c.contribution) / maxAbs) * 100 : 0
+  const isPos = c.contribution >= 0
+  return (
+    <div className={`contrib-row${c.imputed ? ' contrib-row--imputed' : ''}`}>
+      <div className="contrib-row__label">
+        <span>
+          {c.label}
+          {c.imputed && <span className="contrib-row__assumed"> (assumed)</span>}
+        </span>
+        <span className="contrib-row__value">{describeValue(undefined, c.value)}</span>
+      </div>
+      <div className="contrib-bar-wrap">
+        <div className="contrib-bar-track">
+          <div
+            className={`contrib-bar ${isPos ? 'contrib-bar--pos' : 'contrib-bar--neg'}`}
+            style={{ width: `${barPct}%` }}
+          />
+        </div>
+        <span className="contrib-bar__signed">{formatSigned(c.contribution)}</span>
+      </div>
+    </div>
+  )
+}
+
+function ContributionList({ expl }: { expl: Explanation }) {
+  const maxAbs =
+    expl.contributions.length > 0
+      ? Math.max(...expl.contributions.map((c) => Math.abs(c.contribution)))
+      : 1
+  const spaceName = expl.output_space === 'probability' ? 'probability' : 'log-odds'
+  return (
+    <div className="explain-col">
+      <p className="explain-col__title">{expl.method === 'shap' ? 'SHAP' : 'LIME'}</p>
+      <p className="explain-col__space">Contributions in {spaceName}</p>
+      {expl.contributions.length > 0 && (
+        <p className="explain-col__legend">Dashed rows are assumptions, not measured inputs</p>
+      )}
+      {expl.contributions.length === 0 && (
+        <p className="explain-empty">No contributions available.</p>
+      )}
+      {expl.contributions.map((c) => (
+        <ContributionRow key={c.feature} contribution={c} maxAbs={maxAbs} />
+      ))}
+      {expl.method === 'shap' && expl.base_value !== null && (
+        <p className="explain-base">
+          Base (no input): {expl.base_value.toFixed(3)} {spaceName}
+        </p>
+      )}
+      {expl.method === 'lime' && (expl.fidelity !== null || expl.low_confidence) && (
+        <p className="explain-base">
+          {expl.fidelity !== null && <>Local fit R²: {expl.fidelity.toFixed(2)}</>}
+          {expl.low_confidence && (
+            <span className="badge badge--warn" role="status">
+              {' '}
+              ⚠ low local fit
+            </span>
+          )}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function AgreementSection({ agreement }: { agreement: PredictionResponse['agreement'] }) {
+  const rho = agreement.rank_correlation !== null ? agreement.rank_correlation.toFixed(2) : '\u2014'
+  return (
+    <div className="agreement">
+      <p>
+        SHAP vs LIME agreement (top {agreement.k}): rank correlation {rho}, overlap{' '}
+        {formatPercent(agreement.top_k_overlap, 0)}, sign agreement{' '}
+        {formatPercent(agreement.sign_agreement, 0)}
+      </p>
+    </div>
   )
 }
 
@@ -41,6 +151,8 @@ export function ResultView({ result }: { result: PredictionResponse }) {
           ' It is an uncalibrated model output: treat it as a score, not a measured risk.'}
       </p>
 
+      <ProbabilityBar probability={result.probability} threshold={result.threshold} />
+
       {sensitivity !== null && (
         <p className={sensitivity.verdict_uncertain ? 'sensitivity uncertain' : 'sensitivity'}>
           {sensitivityText(sensitivity, result.imputed_features.length)}
@@ -57,6 +169,13 @@ export function ResultView({ result }: { result: PredictionResponse }) {
           </ul>
         </div>
       )}
+
+      <div className="explain-grid">
+        <ContributionList expl={result.shap} />
+        <ContributionList expl={result.lime} />
+      </div>
+
+      <AgreementSection agreement={result.agreement} />
 
       <p className="meta">
         Model: {result.model_name.replace('_', ' ')} &middot; version {result.model_version}

@@ -43,9 +43,19 @@ const INCOMPLETE: Patient = Object.fromEntries(
   Object.entries(HIGH_RISK).filter(([name]) => !MISSING_IN_INCOMPLETE.includes(name)),
 )
 
+// Omitting thal, ca, cp and slope (4 of the most influential features) places the
+// positive-share near 67%, within the 10–90% uncertainty band (decision #23).
+// Verified as the first candidate listed in the handoff; the exact probability
+// and share depend on the trained model artifact.
+const MISSING_IN_UNCERTAIN = ['thal', 'ca', 'cp', 'slope']
+const UNCERTAIN: Patient = Object.fromEntries(
+  Object.entries(HIGH_RISK).filter(([name]) => !MISSING_IN_UNCERTAIN.includes(name)),
+)
+
 /** Illustrative values for trying the tool out; they are not real patients. */
 export const EXAMPLES: Example[] = [
   { id: 'high', label: 'Example: high-risk pattern', values: HIGH_RISK },
   { id: 'low', label: 'Example: low-risk pattern', values: LOW_RISK },
   { id: 'incomplete', label: 'Example: 3 measurements missing', values: INCOMPLETE },
+  { id: 'uncertain', label: 'Example: uncertain verdict (4 missing)', values: UNCERTAIN },
 ]
