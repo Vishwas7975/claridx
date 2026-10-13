@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.services.diabetes_registry import DiabetesModelRegistry
 from app.services.model_registry import ModelRegistry
 
 logger = logging.getLogger("uvicorn.error")
@@ -16,14 +17,26 @@ logger = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    directory = get_settings().model_artifacts_dir / "heart"
+    heart_dir = get_settings().model_artifacts_dir / "heart"
     try:
-        app.state.registry = ModelRegistry.load(directory)
+        app.state.registry = ModelRegistry.load(heart_dir)
         logger.info("Loaded heart models, version %s", app.state.registry.version)
     except FileNotFoundError as exc:
         app.state.registry = None
         logger.error(
             "Model artifacts missing (%s). Train first: uv run python -m ml.scripts.train_heart",
+            exc,
+        )
+
+    diabetes_dir = get_settings().model_artifacts_dir / "diabetes"
+    try:
+        app.state.diabetes_registry = DiabetesModelRegistry.load(diabetes_dir)
+        logger.info("Loaded diabetes models, version %s", app.state.diabetes_registry.version)
+    except (FileNotFoundError, ValueError) as exc:
+        app.state.diabetes_registry = None
+        logger.warning(
+            "Diabetes model artifacts missing or invalid (%s). "
+            "Train first: uv run python -m ml.scripts.train_diabetes",
             exc,
         )
     yield

@@ -96,3 +96,27 @@ def test_models_endpoint_lists_both_models(client) -> None:
     assert body["model_version"] == "test-1"
     assert body["primary"] == "random_forest"
     assert {model["name"] for model in body["models"]} == {"random_forest", "logistic_regression"}
+
+
+def test_heart_prediction_response_shape_unchanged(client) -> None:
+    response = client.post(URL, json={"patient": FULL_PATIENT})
+    assert response.status_code == 200
+    body = response.json()
+    expected_agreement_keys = {"rank_correlation", "top_k_overlap", "sign_agreement", "k"}
+    assert set(body["agreement"].keys()) == expected_agreement_keys
+    expected_top_level_keys = {
+        "model_name",
+        "model_version",
+        "probability",
+        "threshold",
+        "predicted_positive",
+        "calibrated",
+        "imputed_features",
+        "warnings",
+        "shap",
+        "lime",
+        "agreement",
+        "sensitivity",
+        "disclaimer",
+    }
+    assert set(body.keys()) == expected_top_level_keys

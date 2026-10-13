@@ -79,6 +79,270 @@
         "title": "ContributionOut",
         "type": "object"
       },
+      "DiabetesAgreementOut": {
+        "properties": {
+          "k": {
+            "title": "K",
+            "type": "integer"
+          },
+          "rank_correlation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Spearman rank correlation of feature importance magnitudes",
+            "title": "Rank Correlation"
+          },
+          "sign_agreement": {
+            "description": "Share of top-k features with concordant directional signs",
+            "title": "Sign Agreement",
+            "type": "number"
+          },
+          "top_k_overlap": {
+            "description": "Share of top-k features identified by both explainers",
+            "title": "Top K Overlap",
+            "type": "number"
+          }
+        },
+        "required": [
+          "rank_correlation",
+          "top_k_overlap",
+          "sign_agreement",
+          "k"
+        ],
+        "title": "DiabetesAgreementOut",
+        "type": "object"
+      },
+      "DiabetesPatientInput": {
+        "additionalProperties": false,
+        "description": "Measurements for one patient. At least 5 effective measurements required.\n\nValue codes and units are listed by GET /api/v1/diabetes/features.\nZeros in plas, pres, skin, insu, mass are unmeasured and do not count.",
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "maximum": 120.0,
+                "minimum": 21.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Age in years (cohort inclusion criterion: >= 21)",
+            "title": "Age"
+          },
+          "insu": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "2-hour serum insulin (mu U/ml; 0 = unmeasured)",
+            "title": "Insu"
+          },
+          "mass": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Body mass index (kg/m^2; 0 = unmeasured)",
+            "title": "Mass"
+          },
+          "pedi": {
+            "anyOf": [
+              {
+                "maximum": 3.5,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Diabetes pedigree function",
+            "title": "Pedi"
+          },
+          "plas": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Plasma glucose concentration (mg/dL; 0 = unmeasured)",
+            "title": "Plas"
+          },
+          "preg": {
+            "anyOf": [
+              {
+                "maximum": 25.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Number of pregnancies",
+            "title": "Preg"
+          },
+          "pres": {
+            "anyOf": [
+              {
+                "maximum": 300.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Diastolic blood pressure (mm Hg; 0 = unmeasured)",
+            "title": "Pres"
+          },
+          "skin": {
+            "anyOf": [
+              {
+                "maximum": 120.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Triceps skin fold thickness (mm; 0 = unmeasured)",
+            "title": "Skin"
+          }
+        },
+        "title": "DiabetesPatientInput",
+        "type": "object"
+      },
+      "DiabetesPredictionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "model_name": {
+            "default": "logistic_regression",
+            "enum": [
+              "logistic_regression",
+              "random_forest"
+            ],
+            "title": "Model Name",
+            "type": "string"
+          },
+          "patient": {
+            "$ref": "#/components/schemas/DiabetesPatientInput"
+          }
+        },
+        "required": [
+          "patient"
+        ],
+        "title": "DiabetesPredictionRequest",
+        "type": "object"
+      },
+      "DiabetesPredictionResponse": {
+        "properties": {
+          "agreement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiabetesAgreementOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present when compared explainers evaluate identical output spaces"
+          },
+          "calibrated": {
+            "title": "Calibrated",
+            "type": "boolean"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "imputed_features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Imputed Features",
+            "type": "array"
+          },
+          "lime": {
+            "$ref": "#/components/schemas/ExplanationOut"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "predicted_positive": {
+            "title": "Predicted Positive",
+            "type": "boolean"
+          },
+          "probability": {
+            "description": "Predicted probability of diabetes",
+            "title": "Probability",
+            "type": "number"
+          },
+          "sensitivity": {
+            "description": "Omitted for diabetes in this checkpoint",
+            "title": "Sensitivity",
+            "type": "null"
+          },
+          "shap": {
+            "$ref": "#/components/schemas/ExplanationOut"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model_name",
+          "model_version",
+          "probability",
+          "threshold",
+          "predicted_positive",
+          "calibrated",
+          "imputed_features",
+          "warnings",
+          "shap",
+          "lime",
+          "disclaimer"
+        ],
+        "title": "DiabetesPredictionResponse",
+        "type": "object"
+      },
       "ExplanationOut": {
         "properties": {
           "base_value": {
@@ -799,6 +1063,95 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/diabetes/features": {
+      "get": {
+        "description": "Input features with labels, units and allowed values, in form display order.",
+        "operationId": "list_features_api_v1_diabetes_features_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureSpecOut"
+                  },
+                  "title": "Response List Features Api V1 Diabetes Features Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Features",
+        "tags": [
+          "diabetes"
+        ]
+      }
+    },
+    "/api/v1/diabetes/models": {
+      "get": {
+        "operationId": "list_models_api_v1_diabetes_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Models",
+        "tags": [
+          "diabetes"
+        ]
+      }
+    },
+    "/api/v1/diabetes/predictions": {
+      "post": {
+        "description": "Predict diabetes risk and explain it with SHAP and LIME (not stored).",
+        "operationId": "create_prediction_api_v1_diabetes_predictions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiabetesPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiabetesPredictionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Prediction",
+        "tags": [
+          "diabetes"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Liveness probe: the API process is up.",
