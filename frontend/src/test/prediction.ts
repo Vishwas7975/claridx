@@ -1,4 +1,4 @@
-import type { PredictionResponse } from '../api/types'
+import type { DiabetesPredictionResponse, PredictionResponse } from '../api/types'
 
 /** A realistic prediction response for tests; override any part. */
 export function makePrediction(overrides: Partial<PredictionResponse> = {}): PredictionResponse {
@@ -62,6 +62,87 @@ export function makePrediction(overrides: Partial<PredictionResponse> = {}): Pre
     agreement: { rank_correlation: 0.9, top_k_overlap: 1, sign_agreement: 1, k: 3 },
     sensitivity: null,
     disclaimer: 'Decision support only, not a diagnosis.',
+    ...overrides,
+  }
+}
+
+/** A realistic diabetes prediction response for tests; override any part. */
+export function makeDiabetesPrediction(
+  overrides: Partial<DiabetesPredictionResponse> = {},
+): DiabetesPredictionResponse {
+  return {
+    model_name: 'logistic_regression',
+    model_version: 'diabetes-test',
+    probability: 0.35,
+    threshold: 0.34,
+    predicted_positive: true,
+    calibrated: true,
+    imputed_features: [],
+    warnings: [],
+    shap: {
+      method: 'shap',
+      output_space: 'log_odds',
+      base_value: -0.84,
+      fidelity: null,
+      low_confidence: false,
+      contributions: [
+        {
+          feature: 'plas',
+          label: 'Plasma glucose concentration',
+          value: 148,
+          imputed: false,
+          contribution: 0.62,
+        },
+        {
+          feature: 'mass',
+          label: 'Body mass index',
+          value: 33.6,
+          imputed: false,
+          contribution: 0.38,
+        },
+        {
+          feature: 'age',
+          label: 'Age',
+          value: 50,
+          imputed: false,
+          contribution: 0.21,
+        },
+      ],
+    },
+    lime: {
+      method: 'lime',
+      output_space: 'probability',
+      base_value: null,
+      fidelity: 0.82,
+      low_confidence: false,
+      contributions: [
+        {
+          feature: 'plas',
+          label: 'Plasma glucose concentration',
+          value: 148,
+          imputed: false,
+          contribution: 0.18,
+        },
+        {
+          feature: 'mass',
+          label: 'Body mass index',
+          value: 33.6,
+          imputed: false,
+          contribution: 0.11,
+        },
+        {
+          feature: 'age',
+          label: 'Age',
+          value: 50,
+          imputed: false,
+          contribution: 0.07,
+        },
+      ],
+    },
+    agreement: null,
+    sensitivity: null,
+    disclaimer:
+      'Research prototype for decision support and education only. It is not a medical device and must not be used for diagnosis or treatment.',
     ...overrides,
   }
 }

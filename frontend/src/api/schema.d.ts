@@ -4,6 +4,63 @@
  */
 
 export interface paths {
+    "/api/v1/diabetes/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Features
+         * @description Input features with labels, units and allowed values, in form display order.
+         */
+        get: operations["list_features_api_v1_diabetes_features_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diabetes/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Models */
+        get: operations["list_models_api_v1_diabetes_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diabetes/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Prediction
+         * @description Predict diabetes risk and explain it with SHAP and LIME (not stored).
+         */
+        post: operations["create_prediction_api_v1_diabetes_predictions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -137,6 +194,118 @@ export interface components {
              * @description Value as entered; null when it was missing
              */
             value: number | null;
+        };
+        /** DiabetesAgreementOut */
+        DiabetesAgreementOut: {
+            /** K */
+            k: number;
+            /**
+             * Rank Correlation
+             * @description Spearman rank correlation of feature importance magnitudes
+             */
+            rank_correlation: number | null;
+            /**
+             * Sign Agreement
+             * @description Share of top-k features with concordant directional signs
+             */
+            sign_agreement: number;
+            /**
+             * Top K Overlap
+             * @description Share of top-k features identified by both explainers
+             */
+            top_k_overlap: number;
+        };
+        /**
+         * DiabetesPatientInput
+         * @description Measurements for one patient. At least 5 effective measurements required.
+         *
+         *     Value codes and units are listed by GET /api/v1/diabetes/features.
+         *     Zeros in plas, pres, skin, insu, mass are unmeasured and do not count.
+         */
+        DiabetesPatientInput: {
+            /**
+             * Age
+             * @description Age in years (cohort inclusion criterion: >= 21)
+             */
+            age?: number | null;
+            /**
+             * Insu
+             * @description 2-hour serum insulin (mu U/ml; 0 = unmeasured)
+             */
+            insu?: number | null;
+            /**
+             * Mass
+             * @description Body mass index (kg/m^2; 0 = unmeasured)
+             */
+            mass?: number | null;
+            /**
+             * Pedi
+             * @description Diabetes pedigree function
+             */
+            pedi?: number | null;
+            /**
+             * Plas
+             * @description Plasma glucose concentration (mg/dL; 0 = unmeasured)
+             */
+            plas?: number | null;
+            /**
+             * Preg
+             * @description Number of pregnancies
+             */
+            preg?: number | null;
+            /**
+             * Pres
+             * @description Diastolic blood pressure (mm Hg; 0 = unmeasured)
+             */
+            pres?: number | null;
+            /**
+             * Skin
+             * @description Triceps skin fold thickness (mm; 0 = unmeasured)
+             */
+            skin?: number | null;
+        };
+        /** DiabetesPredictionRequest */
+        DiabetesPredictionRequest: {
+            /**
+             * Model Name
+             * @default logistic_regression
+             * @enum {string}
+             */
+            model_name: "logistic_regression" | "random_forest";
+            patient: components["schemas"]["DiabetesPatientInput"];
+        };
+        /** DiabetesPredictionResponse */
+        DiabetesPredictionResponse: {
+            /** @description Present when compared explainers evaluate identical output spaces */
+            agreement?: components["schemas"]["DiabetesAgreementOut"] | null;
+            /** Calibrated */
+            calibrated: boolean;
+            /** Disclaimer */
+            disclaimer: string;
+            /** Imputed Features */
+            imputed_features: string[];
+            lime: components["schemas"]["ExplanationOut"];
+            /** Model Name */
+            model_name: string;
+            /** Model Version */
+            model_version: string;
+            /** Predicted Positive */
+            predicted_positive: boolean;
+            /**
+             * Probability
+             * @description Predicted probability of diabetes
+             */
+            probability: number;
+            /**
+             * Sensitivity
+             * @description Omitted for diabetes in this checkpoint
+             */
+            sensitivity?: null;
+            shap: components["schemas"]["ExplanationOut"];
+            /** Threshold */
+            threshold: number;
+            /** Warnings */
+            warnings: string[];
         };
         /** ExplanationOut */
         ExplanationOut: {
@@ -447,6 +616,79 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_features_api_v1_diabetes_features_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureSpecOut"][];
+                };
+            };
+        };
+    };
+    list_models_api_v1_diabetes_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsResponse"];
+                };
+            };
+        };
+    };
+    create_prediction_api_v1_diabetes_predictions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiabetesPredictionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiabetesPredictionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_v1_health_get: {
         parameters: {
             query?: never;

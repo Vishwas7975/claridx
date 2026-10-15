@@ -1,0 +1,93 @@
+{
+  "features": [
+    {
+      "description": "Number of times pregnant",
+      "kind": "number",
+      "label": "Number of pregnancies",
+      "maximum": 25.0,
+      "minimum": 0.0,
+      "name": "preg",
+      "options": [],
+      "step": 1.0,
+      "unit": null
+    },
+    {
+      "description": "Plasma glucose concentration after a 2-hour oral glucose tolerance test",
+      "kind": "number",
+      "label": "Plasma glucose concentration",
+      "maximum": 500.0,
+      "minimum": 0.0,
+      "name": "plas",
+      "options": [],
+      "step": 1.0,
+      "unit": "mg/dL"
+    },
+    {
+      "description": "Diastolic blood pressure",
+      "kind": "number",
+      "label": "Diastolic blood pressure",
+      "maximum": 300.0,
+      "minimum": 0.0,
+      "name": "pres",
+      "options": [],
+      "step": 1.0,
+      "unit": "mm Hg"
+    },
+    {
+      "description": "Triceps skinfold thickness",
+      "kind": "number",
+      "label": "Triceps skinfold thickness",
+      "maximum": 120.0,
+      "minimum": 0.0,
+      "name": "skin",
+      "options": [],
+      "step": 1.0,
+      "unit": "mm"
+    },
+    {
+      "description": "2-Hour serum insulin",
+      "kind": "number",
+      "label": "2-Hour serum insulin",
+      "maximum": 1000.0,
+      "minimum": 0.0,
+      "name": "insu",
+      "options": [],
+      "step": 1.0,
+      "unit": "mu U/ml"
+    },
+    {
+      "description": "Body mass index (weight in kg / (height in m)^2)",
+      "kind": "number",
+      "label": "Body mass index",
+      "maximum": 100.0,
+      "minimum": 0.0,
+      "name": "mass",
+      "options": [],
+      "step": 0.1,
+      "unit": "kg/m^2"
+    },
+    {
+      "description": "Diabetes pedigree function (genetic risk score based on family history)",
+      "kind": "number",
+      "label": "Diabetes pedigree function",
+      "maximum": 3.5,
+      "minimum": 0.0,
+      "name": "pedi",
+      "options": [],
+      "step": 0.001,
+      "unit": null
+    },
+    {
+      "description": "Age in years (cohort inclusion criterion: >= 21)",
+      "kind": "number",
+      "label": "Age",
+      "maximum": 120.0,
+      "minimum": 21.0,
+      "name": "age",
+      "options": [],
+      "step": 1.0,
+      "unit": "years"
+    }
+  ],
+  "min_measurements": 5
+}

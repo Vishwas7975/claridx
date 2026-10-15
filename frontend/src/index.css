@@ -76,6 +76,16 @@ h2 {
   color: var(--warn);
 }
 
+.condition-nav {
+  margin-bottom: 1.5rem;
+}
+
+.condition-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .layout {
   display: grid;
   gap: 1.5rem;

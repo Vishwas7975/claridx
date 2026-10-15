@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import { heartFixture } from './fixtures'
+import { diabetesFixture, diabetesModelsFixture, heartFixture } from './fixtures'
 
 export function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -11,6 +11,9 @@ export function json(body: unknown, status = 200): Response {
 interface Handlers {
   features?: () => Response | Promise<Response>
   predictions?: () => Response | Promise<Response>
+  diabetesFeatures?: () => Response | Promise<Response>
+  diabetesModels?: () => Response | Promise<Response>
+  diabetesPredictions?: () => Response | Promise<Response>
 }
 
 export interface RecordedCall {
@@ -32,6 +35,21 @@ export function mockApi(handlers: Handlers = {}): RecordedCall[] {
         predictionCalls.push({ path, body: await request.json() })
         if (handlers.predictions === undefined) throw new Error('unexpected prediction request')
         return handlers.predictions()
+      }
+      if (request.method === 'GET' && path === '/api/v1/diabetes/features') {
+        return handlers.diabetesFeatures
+          ? handlers.diabetesFeatures()
+          : json(diabetesFixture.features)
+      }
+      if (request.method === 'GET' && path === '/api/v1/diabetes/models') {
+        return handlers.diabetesModels ? handlers.diabetesModels() : json(diabetesModelsFixture)
+      }
+      if (request.method === 'POST' && path === '/api/v1/diabetes/predictions') {
+        predictionCalls.push({ path, body: await request.json() })
+        if (handlers.diabetesPredictions === undefined) {
+          throw new Error('unexpected diabetes prediction request')
+        }
+        return handlers.diabetesPredictions()
       }
       return json({ detail: `unexpected request: ${request.method} ${path}` }, 404)
     }),
