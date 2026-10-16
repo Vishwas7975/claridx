@@ -5,9 +5,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.heart import (
     ContributionOut,
     ExplanationOut,
+    FeatureImpactOut,
     FeatureSpecOut,
     ModelInfo,
     ModelsResponse,
+    SensitivityOut,
 )
 from ml.pipelines.diabetes import FEATURES, SUSPICIOUS_ZERO_FEATURES
 
@@ -118,9 +120,9 @@ class DiabetesPredictionResponse(BaseModel):
         default=None,
         description="Present when compared explainers evaluate identical output spaces",
     )
-    sensitivity: None = Field(
+    sensitivity: SensitivityOut | None = Field(
         default=None,
-        description="Omitted for diabetes in this checkpoint",
+        description="Present only when some inputs were missing",
     )
     disclaimer: str
 
@@ -132,7 +134,9 @@ __all__ = [
     "DiabetesPredictionRequest",
     "DiabetesPredictionResponse",
     "ExplanationOut",
+    "FeatureImpactOut",
     "FeatureSpecOut",
     "ModelInfo",
     "ModelsResponse",
+    "SensitivityOut",
 ]

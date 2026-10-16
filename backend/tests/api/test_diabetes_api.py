@@ -7,8 +7,10 @@ from fastapi.testclient import TestClient
 from app.api.deps import get_diabetes_registry
 from app.domain.diabetes_features import FEATURE_SPECS, LABELS
 from app.main import app
+from app.services.diabetes_prediction import sensitivity_warning
 from app.services.diabetes_registry import DiabetesModelRegistry
 from ml.pipelines.diabetes import FEATURES, build_models
+from ml.sensitivity import FeatureImpact, SensitivityResult
 from tests.pipelines.synthetic import make_diabetes_like_data
 
 URL = "/api/v1/diabetes/predictions"
@@ -205,3 +207,73 @@ def test_models_endpoint_lists_both_models_with_correct_roles(client) -> None:
         "logistic_regression",
         "random_forest",
     }
+
+
+
+def _sample_sensitivity_result(uncertain: bool) -> SensitivityResult:
+    return SensitivityResult(
+        baseline_probability=0.5,
+        probability_min=0.1,
+        probability_max=0.9,
+        typical_low=0.2,
+        typical_high=0.8,
+        positive_share=0.55,
+        verdict_uncertain=uncertain,
+        patterns_used=300,
+        impacts=(
+            FeatureImpact("insu", 0.1, 0.9, 0.2, 0.8, True),
+            FeatureImpact("skin", 0.3, 0.7, 0.35, 0.65, False),
+        ),
+    )
+
+
+def test_full_patient_has_no_sensitivity_block(client) -> None:
+    body = client.post(URL, json={"patient": FULL_DIABETES_PATIENT}).json()
+    assert body["sensitivity"] is None
+
+
+def test_missing_inputs_include_sensitivity(client) -> None:
+    patient = {k: v for k, v in FULL_DIABETES_PATIENT.items() if k not in ("insu", "skin")}
+    body = client.post(URL, json={"patient": patient}).json()
+    sensitivity = body["sensitivity"]
+
+    assert sensitivity is not None
+    assert {impact["feature"] for impact in sensitivity["impacts"]} == {"skin", "insu"}
+    assert sensitivity["probability_min"] <= sensitivity["typical_low"]
+    assert sensitivity["typical_low"] <= sensitivity["typical_high"]
+    assert sensitivity["typical_high"] <= sensitivity["probability_max"]
+    assert sensitivity["probability_min"] <= sensitivity["baseline_probability"]
+    assert sensitivity["baseline_probability"] <= sensitivity["probability_max"]
+    assert sensitivity["baseline_probability"] == pytest.approx(body["probability"])
+    assert 0.0 <= sensitivity["positive_share"] <= 1.0
+    assert sensitivity["patterns_used"] > 0
+    assert "assumptions" in sensitivity["note"]
+
+
+def test_suspicious_zeros_include_sensitivity(client) -> None:
+    patient = {**FULL_DIABETES_PATIENT, "insu": 0.0, "skin": 0.0}
+    body = client.post(URL, json={"patient": patient}).json()
+    sensitivity = body["sensitivity"]
+
+    assert sensitivity is not None
+    assert {impact["feature"] for impact in sensitivity["impacts"]} == {"skin", "insu"}
+    assert sensitivity["baseline_probability"] == pytest.approx(body["probability"])
+
+
+def test_preg_zero_does_not_trigger_sensitivity(client) -> None:
+    patient = {**FULL_DIABETES_PATIENT, "preg": 0}
+    body = client.post(URL, json={"patient": patient}).json()
+    assert body["sensitivity"] is None
+
+
+def test_warning_when_verdict_is_uncertain() -> None:
+    warning = sensitivity_warning(_sample_sensitivity_result(uncertain=True))
+    assert warning is not None
+    assert "55%" in warning
+    assert "2-Hour serum insulin" in warning
+    assert "0.20" in warning
+    assert "0.80" in warning
+
+
+def test_no_warning_when_verdict_is_stable() -> None:
+    assert sensitivity_warning(_sample_sensitivity_result(uncertain=False)) is None

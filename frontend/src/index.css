@@ -235,8 +235,29 @@ button:disabled {
   font-weight: 700;
 }
 
+.sensitivity {
+  margin: 0.75rem 0 0.5rem;
+  line-height: 1.5;
+}
+
 .sensitivity.uncertain {
   font-weight: 600;
+  color: var(--warn, #b45309);
+}
+
+.sensitivity-impacts {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.sensitivity-impacts__title {
+  margin: 0.25rem 0;
+  font-weight: 600;
+}
+
+.sensitivity-impacts__list {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
 }
 
 .disclaimer {

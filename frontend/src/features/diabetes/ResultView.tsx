@@ -4,9 +4,56 @@ import type {
   DiabetesAgreement,
   DiabetesPredictionResponse,
   Explanation,
+  FeatureImpact,
   FeatureSpec,
+  Sensitivity,
 } from '../../api/types'
-import { describeValue, formatPercent, formatSigned } from './format'
+import { describeShare, describeValue, formatPercent, formatSigned, wholePercent } from './format'
+
+function sensitivityText(sensitivity: Sensitivity, missing: number): string {
+  const lead = sensitivity.verdict_uncertain ? 'The verdict is uncertain. ' : ''
+  const noun = missing === 1 ? 'measurement is' : 'measurements are'
+  const share = describeShare(sensitivity.positive_share)
+  const portion = share === 'all' || share === 'none' ? share : `about ${share}`
+  const low = wholePercent(sensitivity.typical_low)
+  const high = wholePercent(sensitivity.typical_high)
+  const patterns =
+    sensitivity.patterns_used > 0
+      ? ` (${sensitivity.patterns_used} background patterns evaluated)`
+      : ''
+  return (
+    `${lead}Because ${missing} ${noun} missing, the result was re-computed with values real ` +
+    `training patients have: ${portion} of those cases are positive, typically ${low} to ${high}${patterns}.`
+  )
+}
+
+function SensitivityImpacts({ impacts }: { impacts: FeatureImpact[] }) {
+  if (impacts.length === 0) return null
+  return (
+    <div className="sensitivity-impacts">
+      <p className="sensitivity-impacts__title">
+        Missing-feature impacts (typical range while varying each feature alone):
+      </p>
+      <ul className="sensitivity-impacts__list">
+        {impacts.map((imp) => {
+          const low = wholePercent(imp.typical_low)
+          const high = wholePercent(imp.typical_high)
+          return (
+            <li key={imp.feature}>
+              <strong>{imp.label}</strong>: typical range {low} to {high}
+              {imp.can_flip && (
+                <span className="badge badge--warn" role="status">
+                  {' '}
+                  ⚠ can alter verdict
+                </span>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
 
 function ProbabilityBar({ probability, threshold }: { probability: number; threshold: number }) {
   const fillPct = Math.min(100, Math.max(0, probability * 100))
@@ -143,6 +190,7 @@ export function ResultView({ result, specs }: Props) {
   }, [])
 
   const specsByName = specs ? new Map(specs.map((s) => [s.name, s])) : undefined
+  const sensitivity = result.sensitivity ?? null
 
   return (
     <section className="panel" aria-labelledby="result-heading">
@@ -162,6 +210,16 @@ export function ResultView({ result, specs }: Props) {
       </p>
 
       <ProbabilityBar probability={result.probability} threshold={result.threshold} />
+
+      {sensitivity !== null && (
+        <div className="sensitivity-wrap">
+          <p className={sensitivity.verdict_uncertain ? 'sensitivity uncertain' : 'sensitivity'}>
+            {sensitivity.verdict_uncertain && <span aria-hidden="true">⚠ </span>}
+            {sensitivityText(sensitivity, result.imputed_features.length)}
+          </p>
+          <SensitivityImpacts impacts={sensitivity.impacts} />
+        </div>
+      )}
 
       {result.imputed_features.length > 0 && (
         <p className="hint">

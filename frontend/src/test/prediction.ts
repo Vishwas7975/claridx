@@ -1,4 +1,30 @@
-import type { DiabetesPredictionResponse, PredictionResponse } from '../api/types'
+import type { DiabetesPredictionResponse, PredictionResponse, Sensitivity } from '../api/types'
+import { diabetesSensitivityFixture } from './fixtures'
+
+/** A realistic sensitivity result for tests; override any part. */
+export function makeSensitivity(overrides: Partial<Sensitivity> = {}): Sensitivity {
+  return {
+    baseline_probability: 0.615,
+    probability_min: 0.58,
+    probability_max: 0.996,
+    typical_low: 0.59,
+    typical_high: 0.996,
+    positive_share: 1,
+    verdict_uncertain: false,
+    patterns_used: 240,
+    impacts: [],
+    note: 'Simulated from background patient profiles.',
+    ...overrides,
+  }
+}
+
+/** A realistic diabetes sensitivity result for tests; override any part. */
+export function makeDiabetesSensitivity(overrides: Partial<Sensitivity> = {}): Sensitivity {
+  return {
+    ...diabetesSensitivityFixture,
+    ...overrides,
+  }
+}
 
 /** A realistic prediction response for tests; override any part. */
 export function makePrediction(overrides: Partial<PredictionResponse> = {}): PredictionResponse {
@@ -145,4 +171,16 @@ export function makeDiabetesPrediction(
       'Research prototype for decision support and education only. It is not a medical device and must not be used for diagnosis or treatment.',
     ...overrides,
   }
+}
+
+/** A realistic diabetes prediction response with computed sensitivity for tests. */
+export function makeDiabetesPredictionWithSensitivity(
+  overrides: Partial<DiabetesPredictionResponse> = {},
+  sensitivityOverrides: Partial<Sensitivity> = {},
+): DiabetesPredictionResponse {
+  return makeDiabetesPrediction({
+    imputed_features: ['insu', 'skin'],
+    sensitivity: makeDiabetesSensitivity(sensitivityOverrides),
+    ...overrides,
+  })
 }

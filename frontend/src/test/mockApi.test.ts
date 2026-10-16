@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api/client'
 import { diabetesFixture, heartFixture } from './fixtures'
 import { json, mockApi } from './mockApi'
-import { makeDiabetesPrediction, makePrediction } from './prediction'
+import {
+  makeDiabetesPrediction,
+  makeDiabetesPredictionWithSensitivity,
+  makePrediction,
+} from './prediction'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -61,6 +65,36 @@ describe('mockApi', () => {
     expect(prediction).toEqual(expected)
     expect(prediction?.agreement).toBeNull()
     expect('sensitivity' in (prediction ?? {})).toBe(true)
+    expect(prediction?.sensitivity).toBeNull()
+    expect(recorded).toHaveLength(1)
+    expect(recorded[0].path).toBe('/api/v1/diabetes/predictions')
+    expect(recorded[0].body).toEqual(payload)
+  })
+
+  it('records diabetes prediction calls and returns response with computed sensitivity', async () => {
+    const expected = makeDiabetesPredictionWithSensitivity({ probability: 0.45 })
+    const recorded = mockApi({
+      diabetesPredictions: () => json(expected),
+    })
+
+    const payload = {
+      model_name: 'logistic_regression' as const,
+      patient: { preg: 1, plas: 120, pres: 70, mass: 28.5, age: 35 },
+    }
+    const { data: prediction } = await api.POST('/api/v1/diabetes/predictions', {
+      body: payload,
+    })
+
+    expect(prediction).toEqual(expected)
+    expect(prediction?.sensitivity).not.toBeNull()
+    expect(prediction?.sensitivity?.verdict_uncertain).toBe(true)
+    expect(prediction?.sensitivity?.typical_low).toBe(0.28)
+    expect(prediction?.sensitivity?.typical_high).toBe(0.58)
+    expect(prediction?.sensitivity?.positive_share).toBe(0.42)
+    expect(prediction?.sensitivity?.patterns_used).toBe(120)
+    expect(prediction?.sensitivity?.impacts).toHaveLength(2)
+    expect(prediction?.sensitivity?.impacts[0].feature).toBe('insu')
+    expect(prediction?.imputed_features).toEqual(['insu', 'skin'])
     expect(recorded).toHaveLength(1)
     expect(recorded[0].path).toBe('/api/v1/diabetes/predictions')
     expect(recorded[0].body).toEqual(payload)

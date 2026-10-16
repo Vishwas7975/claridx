@@ -10,6 +10,7 @@ import joblib
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
+from ml.config import DECISION_THRESHOLD
 from ml.explain import LimeExplainer, ShapExplainer
 from ml.pipelines.diabetes import (
     FEATURES as DIABETES_FEATURES,
@@ -17,6 +18,7 @@ from ml.pipelines.diabetes import (
 from ml.pipelines.diabetes import (
     SUSPICIOUS_ZERO_FEATURES,
 )
+from ml.sensitivity import SensitivityAnalyzer
 
 SERVED_MODELS = ("logistic_regression", "random_forest")
 PRIMARY_MODEL = "logistic_regression"
@@ -34,6 +36,7 @@ class DiabetesLoadedModel:
     pipeline: Pipeline
     shap: ShapExplainer
     lime: LimeExplainer
+    sensitivity: SensitivityAnalyzer
 
 
 class DiabetesModelRegistry:
@@ -76,6 +79,13 @@ class DiabetesModelRegistry:
                     zero_as_missing=SUSPICIOUS_ZERO_FEATURES,
                     class_names=["tested_negative", "tested_positive"],
                     num_samples=lime_samples,
+                ),
+                sensitivity=SensitivityAnalyzer(
+                    pipeline,
+                    background,
+                    features=DIABETES_FEATURES,
+                    zero_as_missing=SUSPICIOUS_ZERO_FEATURES,
+                    threshold=DECISION_THRESHOLD,
                 ),
             )
             for name, pipeline in pipelines.items()

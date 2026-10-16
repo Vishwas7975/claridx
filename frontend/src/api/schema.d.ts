@@ -296,11 +296,8 @@ export interface components {
              * @description Predicted probability of diabetes
              */
             probability: number;
-            /**
-             * Sensitivity
-             * @description Omitted for diabetes in this checkpoint
-             */
-            sensitivity?: null;
+            /** @description Present only when some inputs were missing */
+            sensitivity?: components["schemas"]["SensitivityOut"] | null;
             shap: components["schemas"]["ExplanationOut"];
             /** Threshold */
             threshold: number;

@@ -308,9 +308,15 @@
             "type": "number"
           },
           "sensitivity": {
-            "description": "Omitted for diabetes in this checkpoint",
-            "title": "Sensitivity",
-            "type": "null"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SensitivityOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present only when some inputs were missing"
           },
           "shap": {
             "$ref": "#/components/schemas/ExplanationOut"

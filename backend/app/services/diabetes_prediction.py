@@ -10,6 +10,8 @@ from app.schemas.diabetes import (
     DiabetesPredictionRequest,
     DiabetesPredictionResponse,
     ExplanationOut,
+    FeatureImpactOut,
+    SensitivityOut,
 )
 from app.services.diabetes_registry import DiabetesModelRegistry
 from ml.config import DECISION_THRESHOLD
@@ -20,6 +22,7 @@ from ml.pipelines.diabetes import (
 from ml.pipelines.diabetes import (
     SUSPICIOUS_ZERO_FEATURES,
 )
+from ml.sensitivity import SensitivityResult
 
 LOW_FIDELITY_THRESHOLD = 0.5
 DISCLAIMER = (
@@ -27,6 +30,12 @@ DISCLAIMER = (
     "Trained on historical benchmark data (Pima Indians Diabetes Database, 768 female "
     "patients >= 21 years) and not validated for clinical use. Predictions are raw, "
     "uncalibrated machine learning outputs and must not be used for diagnosis or treatment."
+)
+SENSITIVITY_NOTE = (
+    "Missing inputs are unknown, not normal. Contributions marked imputed are assumptions, "
+    "not evidence. Ranges come from the values that real training patients have for the "
+    "missing measurements; they describe the training population and do not take the "
+    "entered measurements into account."
 )
 
 
@@ -53,6 +62,46 @@ def _explanation_out(explanation: Explanation) -> ExplanationOut:
             )
             for item in explanation.contributions
         ],
+    )
+
+
+def _sensitivity_out(result: SensitivityResult) -> SensitivityOut:
+    return SensitivityOut(
+        baseline_probability=result.baseline_probability,
+        probability_min=result.probability_min,
+        probability_max=result.probability_max,
+        typical_low=result.typical_low,
+        typical_high=result.typical_high,
+        positive_share=result.positive_share,
+        verdict_uncertain=result.verdict_uncertain,
+        patterns_used=result.patterns_used,
+        impacts=[
+            FeatureImpactOut(
+                feature=item.feature,
+                label=LABELS[item.feature],
+                probability_min=item.probability_min,
+                probability_max=item.probability_max,
+                typical_low=item.typical_low,
+                typical_high=item.typical_high,
+                can_flip=item.can_flip,
+            )
+            for item in result.impacts
+        ],
+        note=SENSITIVITY_NOTE,
+    )
+
+
+def sensitivity_warning(result: SensitivityResult) -> str | None:
+    """A warning naming the most influential missing input, only when plausible cases
+    disagree about the verdict."""
+    if not result.verdict_uncertain or not result.impacts:
+        return None
+    lead = result.impacts[0]
+    return (
+        "The result is uncertain because of missing measurements: about "
+        f"{result.positive_share:.0%} of plausible cases are positive. The most influential "
+        f"is {LABELS[lead.feature]}, typically ranging from {lead.typical_low:.2f} "
+        f"to {lead.typical_high:.2f}."
     )
 
 
@@ -97,6 +146,12 @@ class DiabetesPredictionService:
         warnings = _range_warnings(frame, self._registry.training_ranges)
         warnings.extend(_suspicious_zero_warnings(frame))
 
+        sensitivity = loaded.sensitivity.analyze(frame)
+        if sensitivity is not None:
+            uncertainty_warning = sensitivity_warning(sensitivity)
+            if uncertainty_warning is not None:
+                warnings.append(uncertainty_warning)
+
         if request.model_name == "logistic_regression":
             agreement = None
             warnings.append(
@@ -131,6 +186,6 @@ class DiabetesPredictionService:
             shap=_explanation_out(shap_result),
             lime=_explanation_out(lime_result),
             agreement=agreement,
-            sensitivity=None,
+            sensitivity=None if sensitivity is None else _sensitivity_out(sensitivity),
             disclaimer=DISCLAIMER,
         )

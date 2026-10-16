@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { diabetesFixture } from '../../test/fixtures'
-import { makeDiabetesPrediction } from '../../test/prediction'
+import {
+  makeDiabetesPrediction,
+  makeDiabetesPredictionWithSensitivity,
+} from '../../test/prediction'
 import { EXAMPLES } from './examples'
 import { ResultView } from './ResultView'
 
@@ -28,6 +31,71 @@ describe('ResultView', () => {
     expect(screen.queryByText(/typical/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/positive_share/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/plausible/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/background patterns evaluated/i)).not.toBeInTheDocument()
+  })
+
+  it('renders computed sensitivity with typical range, positive share, and background patterns', () => {
+    render(<ResultView result={makeDiabetesPredictionWithSensitivity()} />)
+    expect(screen.getByText(/Because 2 measurements are missing/)).toBeInTheDocument()
+    expect(screen.getByText(/about 42% of those cases are positive/)).toBeInTheDocument()
+    expect(screen.getByText(/typically 28% to 58%/)).toBeInTheDocument()
+    expect(screen.getByText(/120 background patterns evaluated/)).toBeInTheDocument()
+    expect(screen.getByText('2-Hour serum insulin')).toBeInTheDocument()
+    expect(screen.getByText('Triceps skin fold thickness')).toBeInTheDocument()
+  })
+
+  it('leads with "The verdict is uncertain" and applies uncertain class when verdict_uncertain is true', () => {
+    const { container } = render(
+      <ResultView
+        result={makeDiabetesPredictionWithSensitivity(
+          {},
+          { verdict_uncertain: true, positive_share: 0.42 },
+        )}
+      />,
+    )
+    expect(screen.getByText(/The verdict is uncertain/)).toBeInTheDocument()
+    const uncertainElem = container.querySelector('.sensitivity.uncertain')
+    expect(uncertainElem).toBeInTheDocument()
+  })
+
+  it('renders stable verdict without uncertain class or warning lead when verdict_uncertain is false', () => {
+    const { container } = render(
+      <ResultView
+        result={makeDiabetesPredictionWithSensitivity(
+          {},
+          { verdict_uncertain: false, positive_share: 0.05, typical_low: 0.15, typical_high: 0.25 },
+        )}
+      />,
+    )
+    expect(screen.queryByText(/The verdict is uncertain/)).not.toBeInTheDocument()
+    expect(container.querySelector('.sensitivity.uncertain')).not.toBeInTheDocument()
+    expect(container.querySelector('.sensitivity')).toBeInTheDocument()
+    expect(screen.getByText(/typically 15% to 25%/)).toBeInTheDocument()
+  })
+
+  it('displays "can alter verdict" badge when a feature impact can flip the decision', () => {
+    const { container } = render(
+      <ResultView
+        result={makeDiabetesPredictionWithSensitivity(
+          {},
+          {
+            impacts: [
+              {
+                feature: 'insu',
+                label: '2-Hour serum insulin',
+                can_flip: true,
+                probability_min: 0.25,
+                probability_max: 0.65,
+                typical_low: 0.3,
+                typical_high: 0.6,
+              },
+            ],
+          },
+        )}
+      />,
+    )
+    expect(screen.getByText(/can alter verdict/)).toBeInTheDocument()
+    expect(container.querySelector('.badge--warn')).toBeInTheDocument()
   })
 })
 

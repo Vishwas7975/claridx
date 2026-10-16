@@ -7,6 +7,8 @@ Scenarios do not take the entered measurements into account, so they describe th
 training population, not patients "like this one".
 """
 
+from collections.abc import Sequence
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -19,7 +21,9 @@ from ml.config import (
     UNCERTAIN_SHARE_HIGH,
     UNCERTAIN_SHARE_LOW,
 )
-from ml.pipelines.heart import FEATURES
+from ml.pipelines.heart import FEATURES as HEART_FEATURES
+
+FEATURES = HEART_FEATURES
 
 
 class ProbabilityModel(Protocol):
@@ -59,19 +63,38 @@ class SensitivityAnalyzer:
         self,
         model: ProbabilityModel,
         background: pd.DataFrame,
+        features: Sequence[str] = HEART_FEATURES,
+        zero_as_missing: Sequence[str] | AbstractSet[str] = frozenset(),
         threshold: float = DECISION_THRESHOLD,
     ) -> None:
         self._model = model
         self._threshold = threshold
-        self._background = background[FEATURES].astype(float).reset_index(drop=True)
+        self._features = list(features)
+        self._zero_as_missing = set(zero_as_missing)
+        bg = background[self._features].astype(float).reset_index(drop=True)
+        if self._zero_as_missing:
+            for feature in self._zero_as_missing:
+                if feature in bg.columns:
+                    bg[feature] = bg[feature].replace(0.0, np.nan)
+        self._background = bg
 
     def analyze(self, patient: pd.DataFrame) -> SensitivityResult | None:
         """Return None when nothing is missing, or when no training patient has values for
         all the missing features (an honest range cannot be computed then)."""
-        row = patient[FEATURES].iloc[[0]].astype(float)
-        missing = [feature for feature in FEATURES if bool(row[feature].isna().iloc[0])]
+        row = patient[self._features].iloc[[0]].astype(float).copy()
+        missing = []
+        for feature in self._features:
+            val = row[feature].iloc[0]
+            if pd.isna(val) or (
+                feature in self._zero_as_missing and float(val) == 0.0
+            ):
+                missing.append(feature)
+
         if not missing:
             return None
+
+        for feature in missing:
+            row[feature] = np.nan
 
         patterns = self._background.dropna(subset=missing)
         if patterns.empty:

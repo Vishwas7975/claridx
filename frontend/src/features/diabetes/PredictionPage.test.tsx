@@ -4,7 +4,11 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { diabetesFixture, diabetesModelsFixture } from '../../test/fixtures'
 import { json, mockApi } from '../../test/mockApi'
-import { makeDiabetesPrediction } from '../../test/prediction'
+import {
+  makeDiabetesPrediction,
+  makeDiabetesPredictionWithSensitivity,
+  makeDiabetesSensitivity,
+} from '../../test/prediction'
 import { EXAMPLES } from './examples'
 import { PredictionPage } from './PredictionPage'
 
@@ -113,6 +117,50 @@ describe('PredictionPage', () => {
 
     await screen.findByText('35.0%')
     expect(screen.queryByText(/Because.*measurements are missing/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/background patterns evaluated/i)).not.toBeInTheDocument()
+  })
+
+  it('renders computed sensitivity and uncertain verdict when returned by the API', async () => {
+    mockApi({
+      diabetesPredictions: () => json(makeDiabetesPredictionWithSensitivity()),
+    })
+    const user = renderPage()
+    await analyseExample(user, 3) // routine clinic example
+
+    await screen.findByText('35.0%')
+    expect(screen.getByText(/The verdict is uncertain/)).toBeInTheDocument()
+    expect(screen.getByText(/Because 2 measurements are missing/)).toBeInTheDocument()
+    expect(screen.getByText(/typically 28% to 58%/)).toBeInTheDocument()
+    expect(screen.getByText(/120 background patterns evaluated/)).toBeInTheDocument()
+    expect(screen.getByText('2-Hour serum insulin')).toBeInTheDocument()
+  })
+
+  it('renders stable computed sensitivity when verdict_uncertain is false', async () => {
+    mockApi({
+      diabetesPredictions: () =>
+        json(
+          makeDiabetesPrediction({
+            imputed_features: ['skin', 'insu', 'pedi'],
+            sensitivity: makeDiabetesSensitivity({
+              verdict_uncertain: false,
+              positive_share: 0,
+              typical_low: 0.21,
+              typical_high: 0.32,
+              patterns_used: 324,
+            }),
+          }),
+        ),
+    })
+    const user = renderPage()
+    await analyseExample(user, 2) // minimal example
+
+    await screen.findByText('35.0%')
+    expect(screen.queryByText(/The verdict is uncertain/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Because 3 measurements are missing/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/none of those cases are positive, typically 21% to 32%/),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/324 background patterns evaluated/)).toBeInTheDocument()
   })
 
   it('shows warnings and imputed features returned by the prediction', async () => {

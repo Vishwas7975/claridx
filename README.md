@@ -13,8 +13,9 @@ clinician can verify the output instead of trusting a black box.
 
 ## Status
 
-Under active development. The backend serves explainable heart disease predictions
-(SHAP, LIME, agreement score, missing-data sensitivity). The frontend is next.
+Under active development. The system serves explainable predictions for both Heart Disease
+and Diabetes (SHAP, LIME, cross-explainer agreement, and missing-data sensitivity) across
+backend and frontend.
 
 ## Planned features
 
