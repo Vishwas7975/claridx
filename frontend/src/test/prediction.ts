@@ -92,17 +92,17 @@ export function makePrediction(overrides: Partial<PredictionResponse> = {}): Pre
   }
 }
 
-/** A realistic diabetes prediction response for tests; override any part. */
+/** A realistic diabetes prediction response matching production defaults (threshold 0.5, uncalibrated). */
 export function makeDiabetesPrediction(
   overrides: Partial<DiabetesPredictionResponse> = {},
 ): DiabetesPredictionResponse {
   return {
     model_name: 'logistic_regression',
     model_version: 'diabetes-test',
-    probability: 0.35,
-    threshold: 0.34,
+    probability: 0.65,
+    threshold: 0.5,
     predicted_positive: true,
-    calibrated: true,
+    calibrated: false,
     imputed_features: [],
     warnings: [],
     shap: {
@@ -181,6 +181,19 @@ export function makeDiabetesPredictionWithSensitivity(
   return makeDiabetesPrediction({
     imputed_features: ['insu', 'skin'],
     sensitivity: makeDiabetesSensitivity(sensitivityOverrides),
+    ...overrides,
+  })
+}
+
+/** A custom fixture representing an experimental/calibrated prediction with custom threshold (e.g. prevalence-tuned 0.34). */
+export function makeCalibratedDiabetesPrediction(
+  overrides: Partial<DiabetesPredictionResponse> = {},
+): DiabetesPredictionResponse {
+  return makeDiabetesPrediction({
+    probability: 0.35,
+    threshold: 0.34,
+    predicted_positive: true,
+    calibrated: true,
     ...overrides,
   })
 }

@@ -5,9 +5,24 @@ import { EXAMPLES } from './examples'
 import { MIN_MEASUREMENTS, validateForm, type FormValues } from './form'
 import { fieldLabel } from './format'
 
-const MODEL_OPTIONS: { value: ModelName; label: string }[] = [
-  { value: 'random_forest', label: 'Random Forest (primary model)' },
-  { value: 'logistic_regression', label: 'Logistic Regression (interpretable reference)' },
+const MODEL_OPTIONS: {
+  value: ModelName
+  shortLabel: string
+  label: string
+  description: string
+}[] = [
+  {
+    value: 'random_forest',
+    shortLabel: 'Random Forest',
+    label: 'Random Forest (primary model)',
+    description: 'Random Forest: primary tree ensemble model with non-linear feature interactions.',
+  },
+  {
+    value: 'logistic_regression',
+    shortLabel: 'Logistic Regression',
+    label: 'Logistic Regression (interpretable reference)',
+    description: 'Logistic Regression: interpretable linear reference model.',
+  },
 ]
 
 interface Props {
@@ -26,7 +41,7 @@ interface Props {
 
 function rangeHint(spec: FeatureSpec): string | null {
   if (spec.kind !== 'number' || spec.minimum === null || spec.maximum === null) return null
-  return `${spec.minimum}\u2013${spec.maximum}`
+  return `${spec.minimum}–${spec.maximum}`
 }
 
 interface FieldProps {
@@ -92,6 +107,60 @@ function Field({ spec, value, error, onChange, onBlur }: FieldProps) {
   )
 }
 
+interface FieldGroup {
+  id: string
+  title: string
+  fieldNames: string[]
+}
+
+const HEART_FIELD_GROUPS: FieldGroup[] = [
+  {
+    id: 'profile',
+    title: 'Patient Profile',
+    fieldNames: ['age', 'sex'],
+  },
+  {
+    id: 'clinical',
+    title: 'Clinical Measurements',
+    fieldNames: ['trestbps', 'chol', 'fbs', 'restecg'],
+  },
+  {
+    id: 'diagnostic',
+    title: 'Cardiac & Diagnostic Tests',
+    fieldNames: ['cp', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal'],
+  },
+]
+
+function groupSpecs(specs: FeatureSpec[], groups: FieldGroup[]) {
+  const specMap = new Map(specs.map((s) => [s.name, s]))
+  const assigned = new Set<string>()
+  const result: { group: FieldGroup; specs: FeatureSpec[] }[] = []
+
+  for (const group of groups) {
+    const matched: FeatureSpec[] = []
+    for (const name of group.fieldNames) {
+      const spec = specMap.get(name)
+      if (spec) {
+        matched.push(spec)
+        assigned.add(name)
+      }
+    }
+    if (matched.length > 0) {
+      result.push({ group, specs: matched })
+    }
+  }
+
+  const remaining = specs.filter((s) => !assigned.has(s.name))
+  if (remaining.length > 0) {
+    result.push({
+      group: { id: 'other', title: 'Other Measurements', fieldNames: [] },
+      specs: remaining,
+    })
+  }
+
+  return result
+}
+
 export function PatientForm({
   specs,
   values,
@@ -105,7 +174,6 @@ export function PatientForm({
   onSubmit,
   canPredict = true,
 }: Props) {
-  // A field's own mistakes are shown once the user has left it, not while typing.
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set())
   const validation = validateForm(specs, values)
 
@@ -128,6 +196,8 @@ export function PatientForm({
     status += ` Enter at least ${MIN_MEASUREMENTS} to analyse.`
   }
 
+  const grouped = groupSpecs(specs, HEART_FIELD_GROUPS)
+
   return (
     <form
       className="panel"
@@ -137,39 +207,50 @@ export function PatientForm({
         if (validation.canSubmit && !submitting) onSubmit()
       }}
     >
-      <h2>Patient measurements</h2>
-      <p className="hint">
-        Leave a field blank if the measurement is not available. At least {MIN_MEASUREMENTS} of{' '}
-        {specs.length} are needed.
-      </p>
-
-      <div className="examples" role="group" aria-label="Examples">
-        {EXAMPLES.map((example) => (
-          <button
-            key={example.id}
-            type="button"
-            className="secondary"
-            onClick={() => onApplyExample(example.values)}
-          >
-            {example.label}
-          </button>
-        ))}
+      <div className="panel-header-compact">
+        <h2>Patient measurements</h2>
+        <p className="hint">
+          Leave blank if unavailable. At least {MIN_MEASUREMENTS} of {specs.length} are required.
+        </p>
       </div>
 
-      <div className="fields">
-        {specs.map((spec) => (
-          <Field
-            key={spec.name}
-            spec={spec}
-            value={values[spec.name] ?? ''}
-            error={
-              (touched.has(spec.name) ? validation.errors[spec.name] : undefined) ??
-              serverByField.get(spec.name) ??
-              null
-            }
-            onChange={(value) => onChange(spec.name, value)}
-            onBlur={() => touch(spec.name)}
-          />
+      <div className="examples-section">
+        <span className="examples-label">Load Reference Patient:</span>
+        <div className="examples-grid" role="group" aria-label="Examples">
+          {EXAMPLES.map((example) => (
+            <button
+              key={example.id}
+              type="button"
+              className="secondary sm example-btn"
+              onClick={() => onApplyExample(example.values)}
+            >
+              {example.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="form-sections">
+        {grouped.map(({ group, specs: sectionSpecs }) => (
+          <div key={group.id} className="form-section">
+            <h3 className="form-section-title">{group.title}</h3>
+            <div className="fields">
+              {sectionSpecs.map((spec) => (
+                <Field
+                  key={spec.name}
+                  spec={spec}
+                  value={values[spec.name] ?? ''}
+                  error={
+                    (touched.has(spec.name) ? validation.errors[spec.name] : undefined) ??
+                    serverByField.get(spec.name) ??
+                    null
+                  }
+                  onChange={(value) => onChange(spec.name, value)}
+                  onBlur={() => touch(spec.name)}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -178,14 +259,18 @@ export function PatientForm({
         <select
           id="model"
           value={modelName}
+          aria-describedby="heart-model-desc"
           onChange={(event) => onModelChange(event.target.value as ModelName)}
         >
           {MODEL_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} label={option.shortLabel}>
               {option.label}
             </option>
           ))}
         </select>
+        <p id="heart-model-desc" className="hint model-desc">
+          {MODEL_OPTIONS.find((option) => option.value === modelName)?.description}
+        </p>
       </div>
 
       <p role="status" className="status">
@@ -200,7 +285,7 @@ export function PatientForm({
       <div className="actions">
         {canPredict ? (
           <button type="submit" disabled={!validation.canSubmit || submitting}>
-            {submitting ? 'Analysing\u2026' : 'Analyse'}
+            {submitting ? 'Analysing…' : 'Analyse'}
           </button>
         ) : (
           <p className="role-restriction-note" role="note">

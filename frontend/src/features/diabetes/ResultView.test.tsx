@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { diabetesFixture } from '../../test/fixtures'
 import {
+  makeCalibratedDiabetesPrediction,
   makeDiabetesPrediction,
   makeDiabetesPredictionWithSensitivity,
 } from '../../test/prediction'
@@ -11,14 +12,21 @@ import { ResultView } from './ResultView'
 describe('ResultView', () => {
   it('renders estimated probability of diabetes and decision threshold', () => {
     render(<ResultView result={makeDiabetesPrediction()} />)
-    expect(screen.getByText('35.0%')).toBeInTheDocument()
+    expect(screen.getByText('65.0%')).toBeInTheDocument()
     expect(screen.getByText(/estimated probability of diabetes/)).toBeInTheDocument()
-    expect(screen.getByText(/at or above the decision threshold of 34%/)).toBeInTheDocument()
+    expect(screen.getByText(/at or above the decision threshold of 50%/)).toBeInTheDocument()
   })
 
   it('renders uncalibrated score note when calibrated is false', () => {
-    render(<ResultView result={makeDiabetesPrediction({ calibrated: false })} />)
+    render(<ResultView result={makeDiabetesPrediction()} />)
     expect(screen.getByText(/uncalibrated model output: treat it as a score/)).toBeInTheDocument()
+  })
+
+  it('omits uncalibrated score note when calibrated is true in custom fixture', () => {
+    render(<ResultView result={makeCalibratedDiabetesPrediction()} />)
+    expect(
+      screen.queryByText(/uncalibrated model output: treat it as a score/),
+    ).not.toBeInTheDocument()
   })
 
   it('moves focus to the result heading on mount', () => {
@@ -108,7 +116,12 @@ describe('probability bar', () => {
   })
 
   it('shows decision threshold in bar legend', () => {
-    render(<ResultView result={makeDiabetesPrediction({ threshold: 0.34 })} />)
+    render(<ResultView result={makeDiabetesPrediction()} />)
+    expect(screen.getByText('Decision threshold: 50%')).toBeInTheDocument()
+  })
+
+  it('shows custom decision threshold in bar legend when specified', () => {
+    render(<ResultView result={makeCalibratedDiabetesPrediction({ threshold: 0.34 })} />)
     expect(screen.getByText('Decision threshold: 34%')).toBeInTheDocument()
   })
 })

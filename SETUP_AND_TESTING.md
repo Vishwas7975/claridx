@@ -388,7 +388,7 @@ On success, the header displays your name and role badge, and the condition sele
 1. Select **Heart Disease** (the default tab).
 2. Choose a model from the model selector (default: Random Forest).
 3. Fill in patient measurements. At least 7 of the 13 fields are required.
-   Use the **Load example** button to populate a realistic synthetic patient.
+   Click any of the example preset buttons (e.g., **Example: typical high risk** or **Example: normal adult**) to populate a realistic synthetic patient.
 4. Click **Analyse**.
 5. The result panel displays:
    - Predicted probability of heart disease.
@@ -632,6 +632,10 @@ They do not represent real patients.
 
 ### Authentication
 
+- [ ] **Request access guidance**
+  - On the sign-in screen, click **Request Access**.
+  - ✅ Expected: displays administrative provisioning guidance and clinical access policy with a return to sign-in option.
+
 - [ ] **Valid login (Doctor)**
   - Go to http://localhost:5173.
   - Enter your Doctor account email and correct password.
@@ -655,7 +659,7 @@ They do not represent real patients.
 - [ ] **Basic prediction**
   - Sign in as Doctor.
   - Select **Heart Disease** and model **Random Forest**.
-  - Click **Load example** to populate measurements.
+  - Click one of the example preset buttons (e.g., **Example: typical high risk**) to populate measurements.
   - Click **Analyse**.
   - ✅ Expected: probability displayed (0–1), binary verdict, SHAP contributions, LIME contributions, agreement metrics, disclaimer.
 

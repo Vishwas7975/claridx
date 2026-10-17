@@ -50,9 +50,9 @@ describe('PredictionPage', () => {
 
     await analyseExample(user, 0)
 
-    expect(await screen.findByText('35.0%')).toBeInTheDocument()
+    expect(await screen.findByText('65.0%')).toBeInTheDocument()
     expect(screen.getByText(/estimated probability of diabetes/)).toBeInTheDocument()
-    expect(screen.getByText(/at or above the decision threshold of 34%/)).toBeInTheDocument()
+    expect(screen.getByText(/at or above the decision threshold of 50%/)).toBeInTheDocument()
     expect(calls).toHaveLength(1)
     expect(calls[0].path).toBe('/api/v1/diabetes/predictions')
     expect(calls[0].body).toEqual({
@@ -81,7 +81,7 @@ describe('PredictionPage', () => {
     await user.selectOptions(await screen.findByLabelText('Model'), 'random_forest')
     await analyseExample(user, 0)
 
-    await screen.findByText('35.0%')
+    await screen.findByText('65.0%')
     expect(calls[0].body).toMatchObject({ model_name: 'random_forest' })
     expect(screen.getByText(/SHAP vs LIME agreement \(top 3\)/)).toBeInTheDocument()
   })
@@ -99,7 +99,7 @@ describe('PredictionPage', () => {
     const user = renderPage()
     await analyseExample(user, 0)
 
-    await screen.findByText('35.0%')
+    await screen.findByText('65.0%')
     expect(screen.queryByText(/SHAP vs LIME agreement/)).not.toBeInTheDocument()
   })
 
@@ -115,7 +115,7 @@ describe('PredictionPage', () => {
     const user = renderPage()
     await analyseExample(user, 0)
 
-    await screen.findByText('35.0%')
+    await screen.findByText('65.0%')
     expect(screen.queryByText(/Because.*measurements are missing/)).not.toBeInTheDocument()
     expect(screen.queryByText(/background patterns evaluated/i)).not.toBeInTheDocument()
   })
@@ -127,7 +127,7 @@ describe('PredictionPage', () => {
     const user = renderPage()
     await analyseExample(user, 3) // routine clinic example
 
-    await screen.findByText('35.0%')
+    await screen.findByText('65.0%')
     expect(screen.getByText(/The verdict is uncertain/)).toBeInTheDocument()
     expect(screen.getByText(/Because 2 measurements are missing/)).toBeInTheDocument()
     expect(screen.getByText(/typically 28% to 58%/)).toBeInTheDocument()
@@ -154,7 +154,7 @@ describe('PredictionPage', () => {
     const user = renderPage()
     await analyseExample(user, 2) // minimal example
 
-    await screen.findByText('35.0%')
+    await screen.findByText('65.0%')
     expect(screen.queryByText(/The verdict is uncertain/)).not.toBeInTheDocument()
     expect(screen.getByText(/Because 3 measurements are missing/)).toBeInTheDocument()
     expect(
@@ -235,20 +235,20 @@ describe('PredictionPage', () => {
     mockApi({ diabetesPredictions: () => json(makeDiabetesPrediction()) })
     const user = renderPage()
     await analyseExample(user, 0)
-    await screen.findByText('35.0%')
+    await screen.findByText('65.0%')
 
     // Invalidate on typing
     await user.type(screen.getByLabelText('Age (years)'), '1')
-    expect(screen.queryByText('35.0%')).not.toBeInTheDocument()
+    expect(screen.queryByText('65.0%')).not.toBeInTheDocument()
     expect(screen.getByText(/result will appear here/i)).toBeInTheDocument()
 
     // Analyse again
     await analyseExample(user, 0)
-    await screen.findByText('35.0%')
+    await screen.findByText('65.0%')
 
     // Invalidate on model change
     await user.selectOptions(screen.getByLabelText('Model'), 'random_forest')
-    expect(screen.queryByText('35.0%')).not.toBeInTheDocument()
+    expect(screen.queryByText('65.0%')).not.toBeInTheDocument()
     expect(screen.getByText(/result will appear here/i)).toBeInTheDocument()
   })
 

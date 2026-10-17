@@ -40,7 +40,7 @@ interface Props {
 
 function rangeHint(spec: FeatureSpec): string | null {
   if (spec.kind !== 'number' || spec.minimum === null || spec.maximum === null) return null
-  return `${spec.minimum}\u2013${spec.maximum}`
+  return `${spec.minimum}–${spec.maximum}`
 }
 
 interface FieldProps {
@@ -106,6 +106,61 @@ function Field({ spec, value, error, onChange, onBlur }: FieldProps) {
   )
 }
 
+interface FieldGroup {
+  id: string
+  title: string
+  fieldNames: string[]
+}
+
+const DIABETES_FIELD_GROUPS: FieldGroup[] = [
+  {
+    id: 'profile',
+    title: 'Patient Profile',
+    fieldNames: ['age', 'preg', 'mass', 'pedi'],
+  },
+  {
+    id: 'metabolic',
+    title: 'Metabolic & Diagnostic Measurements',
+    fieldNames: ['plas', 'insu', 'pres', 'skin'],
+  },
+]
+
+function groupSpecs(specs: FeatureSpec[], groups: FieldGroup[]) {
+  const specMap = new Map(specs.map((s) => [s.name, s]))
+  const assigned = new Set<string>()
+  const result: { group: FieldGroup; specs: FeatureSpec[] }[] = []
+
+  for (const group of groups) {
+    const matched: FeatureSpec[] = []
+    for (const name of group.fieldNames) {
+      const spec = specMap.get(name)
+      if (spec) {
+        matched.push(spec)
+        assigned.add(name)
+      }
+    }
+    if (matched.length > 0) {
+      result.push({ group, specs: matched })
+    }
+  }
+
+  const remaining = specs.filter((s) => !assigned.has(s.name))
+  if (remaining.length > 0) {
+    result.push({
+      group: { id: 'other', title: 'Other Measurements', fieldNames: [] },
+      specs: remaining,
+    })
+  }
+
+  return result
+}
+
+function modelShortLabel(name: string): string {
+  if (name === 'logistic_regression') return 'Logistic Regression'
+  if (name === 'random_forest') return 'Random Forest'
+  return name
+}
+
 export function PatientForm({
   specs,
   models,
@@ -143,6 +198,7 @@ export function PatientForm({
   }
 
   const modelOptions = models && models.length > 0 ? models : DEFAULT_MODELS
+  const grouped = groupSpecs(specs, DIABETES_FIELD_GROUPS)
 
   return (
     <form
@@ -153,39 +209,50 @@ export function PatientForm({
         if (validation.canSubmit && !submitting) onSubmit()
       }}
     >
-      <h2>Patient measurements</h2>
-      <p className="hint">
-        Leave a field blank if the measurement is not available. At least {MIN_MEASUREMENTS} of{' '}
-        {specs.length} are needed.
-      </p>
-
-      <div className="examples" role="group" aria-label="Examples">
-        {EXAMPLES.map((example) => (
-          <button
-            key={example.id}
-            type="button"
-            className="secondary"
-            onClick={() => onApplyExample(example.values)}
-          >
-            {example.label}
-          </button>
-        ))}
+      <div className="panel-header-compact">
+        <h2>Patient measurements</h2>
+        <p className="hint">
+          Leave blank if unavailable. At least {MIN_MEASUREMENTS} of {specs.length} are required.
+        </p>
       </div>
 
-      <div className="fields">
-        {specs.map((spec) => (
-          <Field
-            key={spec.name}
-            spec={spec}
-            value={values[spec.name] ?? ''}
-            error={
-              (touched.has(spec.name) ? validation.errors[spec.name] : undefined) ??
-              serverByField.get(spec.name) ??
-              null
-            }
-            onChange={(value) => onChange(spec.name, value)}
-            onBlur={() => touch(spec.name)}
-          />
+      <div className="examples-section">
+        <span className="examples-label">Load Reference Patient:</span>
+        <div className="examples-grid" role="group" aria-label="Examples">
+          {EXAMPLES.map((example) => (
+            <button
+              key={example.id}
+              type="button"
+              className="secondary sm example-btn"
+              onClick={() => onApplyExample(example.values)}
+            >
+              {example.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="form-sections">
+        {grouped.map(({ group, specs: sectionSpecs }) => (
+          <div key={group.id} className="form-section">
+            <h3 className="form-section-title">{group.title}</h3>
+            <div className="fields">
+              {sectionSpecs.map((spec) => (
+                <Field
+                  key={spec.name}
+                  spec={spec}
+                  value={values[spec.name] ?? ''}
+                  error={
+                    (touched.has(spec.name) ? validation.errors[spec.name] : undefined) ??
+                    serverByField.get(spec.name) ??
+                    null
+                  }
+                  onChange={(value) => onChange(spec.name, value)}
+                  onBlur={() => touch(spec.name)}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -194,14 +261,20 @@ export function PatientForm({
         <select
           id="model"
           value={modelName}
+          aria-describedby="diabetes-model-desc"
           onChange={(event) => onModelChange(event.target.value as DiabetesModelName)}
         >
           {modelOptions.map((option) => (
-            <option key={option.name} value={option.name}>
+            <option key={option.name} value={option.name} label={modelShortLabel(option.name)}>
               {option.description || option.name}
             </option>
           ))}
         </select>
+        {modelOptions.find((option) => option.name === modelName)?.description && (
+          <p id="diabetes-model-desc" className="hint model-desc">
+            {modelOptions.find((option) => option.name === modelName)?.description}
+          </p>
+        )}
       </div>
 
       <p role="status" className="status">
@@ -216,7 +289,7 @@ export function PatientForm({
       <div className="actions">
         {canPredict ? (
           <button type="submit" disabled={!validation.canSubmit || submitting}>
-            {submitting ? 'Analysing\u2026' : 'Analyse'}
+            {submitting ? 'Analysing…' : 'Analyse'}
           </button>
         ) : (
           <p className="role-restriction-note" role="note">

@@ -12,9 +12,11 @@ export function ErrorNotice({ title, error, onRetry }: Props) {
       <strong>{title}</strong>
       <p>{describeError(error)}</p>
       {onRetry && (
-        <button type="button" className="secondary" onClick={() => onRetry()}>
-          Try again
-        </button>
+        <div style={{ marginTop: '0.75rem' }}>
+          <button type="button" className="secondary sm" onClick={() => onRetry()}>
+            Try again
+          </button>
+        </div>
       )}
     </div>
   )

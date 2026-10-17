@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { ApiError } from '../../api/errors'
 import type { ModelName } from '../../api/types'
 import { ErrorNotice } from '../../components/ErrorNotice'
-import { buildPatient, toFormValues, type FormValues } from './form'
+import { ResultsEmptyState } from '../../components/ResultsEmptyState'
+import { buildPatient, MIN_MEASUREMENTS, toFormValues, type FormValues } from './form'
 import { useFeatures, usePrediction } from './hooks'
 import { PatientForm } from './PatientForm'
 import { ResultView } from './ResultView'
@@ -58,7 +59,12 @@ export function PredictionPage() {
         {prediction.isError && <ErrorNotice title="Analysis failed" error={prediction.error} />}
         {prediction.isSuccess && <ResultView result={prediction.data} />}
         {prediction.isIdle && (
-          <p className="placeholder">The result will appear here after you analyse a patient.</p>
+          <ResultsEmptyState
+            condition="heart"
+            modelName={modelName}
+            minMeasurements={MIN_MEASUREMENTS}
+            totalMeasurements={specs.length}
+          />
         )}
       </div>
     </div>
