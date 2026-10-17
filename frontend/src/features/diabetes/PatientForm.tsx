@@ -35,6 +35,7 @@ interface Props {
   serverIssues: FieldIssue[]
   submitting: boolean
   onSubmit: () => void
+  canPredict?: boolean
 }
 
 function rangeHint(spec: FeatureSpec): string | null {
@@ -117,6 +118,7 @@ export function PatientForm({
   serverIssues,
   submitting,
   onSubmit,
+  canPredict = true,
 }: Props) {
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set())
   const validation = validateForm(specs, values)
@@ -212,9 +214,15 @@ export function PatientForm({
       ))}
 
       <div className="actions">
-        <button type="submit" disabled={!validation.canSubmit || submitting}>
-          {submitting ? 'Analysing\u2026' : 'Analyse'}
-        </button>
+        {canPredict ? (
+          <button type="submit" disabled={!validation.canSubmit || submitting}>
+            {submitting ? 'Analysing\u2026' : 'Analyse'}
+          </button>
+        ) : (
+          <p className="role-restriction-note" role="note">
+            Prediction generation is restricted to Doctor and Admin accounts.
+          </p>
+        )}
         <button
           type="button"
           className="secondary"

@@ -1021,6 +1021,94 @@
         "title": "SensitivityOut",
         "type": "object"
       },
+      "TokenResponse": {
+        "description": "Bearer access token response schema.",
+        "properties": {
+          "access_token": {
+            "description": "Signed JWT access token",
+            "title": "Access Token",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "description": "Token type, always 'bearer'",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token"
+        ],
+        "title": "TokenResponse",
+        "type": "object"
+      },
+      "UserProfileResponse": {
+        "description": "Safe authenticated user profile schema omitting sensitive credentials.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "role",
+          "is_active",
+          "last_login_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "UserProfileResponse",
+        "type": "object"
+      },
+      "UserRole": {
+        "enum": [
+          "admin",
+          "doctor",
+          "researcher"
+        ],
+        "title": "UserRole",
+        "type": "string"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1061,6 +1149,17 @@
         "title": "ValidationError",
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/auth/login"
+          }
+        },
+        "type": "oauth2"
+      }
     }
   },
   "info": {
@@ -1069,6 +1168,107 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Authenticate with email/password, returning an OAuth2 bearer access token.\n\nAccepts **application/json** (``{\"email\": ..., \"password\": ...}``) or the standard\nOAuth2 **application/x-www-form-urlencoded** body (``username=...&password=...``).\nBoth formats share the same authentication logic, failure responses, and\n``last_login_at`` behaviour.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "Credentials payload for user authentication. Supports 'email' or 'username' (OAuth2 alias).",
+                "properties": {
+                  "email": {
+                    "description": "User's email address",
+                    "title": "Email",
+                    "type": "string"
+                  },
+                  "password": {
+                    "description": "User's plaintext password",
+                    "minLength": 1,
+                    "title": "Password",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "title": "LoginRequest",
+                "type": "object"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "description": "Standard OAuth2 Password flow form fields.",
+                "properties": {
+                  "password": {
+                    "description": "User's plaintext password",
+                    "title": "Password",
+                    "type": "string"
+                  },
+                  "username": {
+                    "description": "User's email address (OAuth2 username field)",
+                    "title": "Username",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "title": "OAuth2LoginForm",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "description": "Retrieve the safe profile of the currently authenticated active user.",
+        "operationId": "read_current_user_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Current User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/diabetes/features": {
       "get": {
         "description": "Input features with labels, units and allowed values, in form display order.",
@@ -1152,6 +1352,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "summary": "Create Prediction",
         "tags": [
           "diabetes"
@@ -1293,6 +1498,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "summary": "Create Prediction",
         "tags": [
           "heart disease"

@@ -21,6 +21,7 @@ interface Props {
   serverIssues: FieldIssue[]
   submitting: boolean
   onSubmit: () => void
+  canPredict?: boolean
 }
 
 function rangeHint(spec: FeatureSpec): string | null {
@@ -102,6 +103,7 @@ export function PatientForm({
   serverIssues,
   submitting,
   onSubmit,
+  canPredict = true,
 }: Props) {
   // A field's own mistakes are shown once the user has left it, not while typing.
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set())
@@ -196,9 +198,15 @@ export function PatientForm({
       ))}
 
       <div className="actions">
-        <button type="submit" disabled={!validation.canSubmit || submitting}>
-          {submitting ? 'Analysing\u2026' : 'Analyse'}
-        </button>
+        {canPredict ? (
+          <button type="submit" disabled={!validation.canSubmit || submitting}>
+            {submitting ? 'Analysing\u2026' : 'Analyse'}
+          </button>
+        ) : (
+          <p className="role-restriction-note" role="note">
+            Prediction generation is restricted to Doctor and Admin accounts.
+          </p>
+        )}
         <button
           type="button"
           className="secondary"

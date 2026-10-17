@@ -441,3 +441,140 @@ button:disabled {
   background: var(--warn-bg);
   color: var(--warn);
 }
+
+/* Authentication and Navigation */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.user-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.role-badge.role-doctor {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.role-badge.role-admin {
+  background: #f3e8fd;
+  color: #7627bb;
+}
+
+.role-badge.role-researcher {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.sign-out-btn {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.875rem;
+}
+
+/* Login View */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2.5rem 1rem;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.25rem;
+  width: 100%;
+  max-width: 26rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.login-card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  color: var(--text);
+}
+
+.login-subtitle {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin: 0 0 1.5rem;
+}
+
+.error-banner {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid #f5c2c7;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  margin: 0 0 1.25rem;
+}
+
+.session-loading {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem;
+  font-size: 1rem;
+}
+
+/* Researcher Notice */
+.researcher-notice {
+  background: #fff8eb;
+  border: 1px solid #ffd599;
+  border-left: 4px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.researcher-notice h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  color: var(--warn);
+}
+
+.researcher-notice p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #5c3b00;
+  line-height: 1.45;
+}
+
+.role-restriction-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+}

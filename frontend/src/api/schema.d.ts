@@ -4,6 +4,51 @@
  */
 
 export interface paths {
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login
+         * @description Authenticate with email/password, returning an OAuth2 bearer access token.
+         *
+         *     Accepts **application/json** (``{"email": ..., "password": ...}``) or the standard
+         *     OAuth2 **application/x-www-form-urlencoded** body (``username=...&password=...``).
+         *     Both formats share the same authentication logic, failure responses, and
+         *     ``last_login_at`` behaviour.
+         */
+        post: operations["login_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Current User
+         * @description Retrieve the safe profile of the currently authenticated active user.
+         */
+        get: operations["read_current_user_api_v1_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/diabetes/features": {
         parameters: {
             query?: never;
@@ -591,6 +636,55 @@ export interface components {
              */
             verdict_uncertain: boolean;
         };
+        /**
+         * TokenResponse
+         * @description Bearer access token response schema.
+         */
+        TokenResponse: {
+            /**
+             * Access Token
+             * @description Signed JWT access token
+             */
+            access_token: string;
+            /**
+             * Token Type
+             * @description Token type, always 'bearer'
+             * @default bearer
+             */
+            token_type: string;
+        };
+        /**
+         * UserProfileResponse
+         * @description Safe authenticated user profile schema omitting sensitive credentials.
+         */
+        UserProfileResponse: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email */
+            email: string;
+            /** Full Name */
+            full_name: string;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Last Login At */
+            last_login_at: string | null;
+            role: components["schemas"]["UserRole"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * UserRole
+         * @enum {string}
+         */
+        UserRole: "admin" | "doctor" | "researcher";
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -613,6 +707,73 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    login_api_v1_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Email
+                     * @description User's email address
+                     */
+                    email: string;
+                    /**
+                     * Password
+                     * @description User's plaintext password
+                     */
+                    password: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    /**
+                     * Password
+                     * @description User's plaintext password
+                     */
+                    password: string;
+                    /**
+                     * Username
+                     * @description User's email address (OAuth2 username field)
+                     */
+                    username: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+        };
+    };
+    read_current_user_api_v1_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileResponse"];
+                };
+            };
+        };
+    };
     list_features_api_v1_diabetes_features_get: {
         parameters: {
             query?: never;

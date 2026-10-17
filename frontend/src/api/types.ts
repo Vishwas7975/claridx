@@ -21,3 +21,12 @@ export type DiabetesAgreement = Schemas['DiabetesAgreementOut']
 export type DiabetesModelName = NonNullable<DiabetesPredictionRequest['model_name']>
 export type ModelInfo = Schemas['ModelInfo']
 export type ModelsResponse = Schemas['ModelsResponse']
+
+export type TokenResponse = Schemas['TokenResponse']
+export type UserProfileResponse = Schemas['UserProfileResponse']
+export type UserProfile = UserProfileResponse
+export type UserRole = Schemas['UserRole']
+export interface LoginRequest {
+  email: string
+  password: string
+}

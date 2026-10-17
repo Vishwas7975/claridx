@@ -38,6 +38,15 @@ export function toApiError(error: unknown, status: number): ApiError {
     const issues = detail.map(toIssue).filter((issue): issue is FieldIssue => issue !== null)
     return new ApiError('The server rejected some of the values.', status, issues)
   }
+  if (status === 401) {
+    return new ApiError(
+      'Your session has expired or you are not signed in. Please sign in to continue.',
+      status,
+    )
+  }
+  if (status === 403) {
+    return new ApiError('You do not have permission to perform this action.', status)
+  }
   if (status === 502 || status === 503 || status === 504) {
     return new ApiError(
       'The server is not reachable right now. Check that the backend is running and try again.',

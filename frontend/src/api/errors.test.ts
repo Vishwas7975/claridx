@@ -53,6 +53,18 @@ describe('toApiError', () => {
     )
   })
 
+  it('handles 401 unauthorized with a friendly session-expired fallback', () => {
+    const error = toApiError(undefined, 401)
+    expect(error.status).toBe(401)
+    expect(error.message).toMatch(/session has expired/i)
+  })
+
+  it('handles 403 forbidden with a friendly permission-denied fallback', () => {
+    const error = toApiError(undefined, 403)
+    expect(error.status).toBe(403)
+    expect(error.message).toMatch(/do not have permission/i)
+  })
+
   it('keeps a generic message for other statuses', () => {
     expect(toApiError({ other: 1 }, 404).message).toBe('The request failed (HTTP 404).')
   })

@@ -1,3 +1,4 @@
+import { useAuth } from '../auth/AuthContext'
 import { useState } from 'react'
 import { ApiError } from '../../api/errors'
 import type { DiabetesModelName } from '../../api/types'
@@ -8,6 +9,8 @@ import { PatientForm } from './PatientForm'
 import { ResultView } from './ResultView'
 
 export function PredictionPage() {
+  const { user } = useAuth()
+  const isResearcher = user?.role?.toLowerCase() === 'researcher'
   const features = useFeatures()
   const models = useModels()
   const prediction = usePrediction()
@@ -69,6 +72,7 @@ export function PredictionPage() {
         serverIssues={serverIssues}
         submitting={prediction.isPending}
         onSubmit={() => prediction.mutate({ patient: buildPatient(specs, values), modelName })}
+        canPredict={!isResearcher}
       />
       <div className="results">
         {prediction.isPending && <p role="status">Analysing&hellip;</p>}
