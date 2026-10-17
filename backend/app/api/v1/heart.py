@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 from fastapi import APIRouter
 
-from app.api.deps import RegistryDep
+from app.api.deps import PredictionUserDep, RegistryDep
 from app.domain.heart_features import FEATURE_SPECS
 from app.schemas.heart import (
     FeatureSpecOut,
@@ -40,6 +40,10 @@ def list_models(registry: RegistryDep) -> ModelsResponse:
 
 
 @router.post("/predictions", response_model=PredictionResponse)
-def create_prediction(payload: PredictionRequest, registry: RegistryDep) -> PredictionResponse:
+def create_prediction(
+    payload: PredictionRequest,
+    registry: RegistryDep,
+    _current_user: PredictionUserDep,
+) -> PredictionResponse:
     """Predict heart disease risk and explain it with SHAP and LIME (not stored)."""
     return HeartPredictionService(registry).predict(payload)

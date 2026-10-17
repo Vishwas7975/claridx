@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,6 +27,7 @@ class Settings(BaseSettings):
 
     secret_key: str = Field(min_length=32)
     access_token_expire_minutes: int = 30
+    jwt_algorithm: Literal["HS256"] = "HS256"
 
     cors_origins: list[str] = ["http://localhost:5173"]
 

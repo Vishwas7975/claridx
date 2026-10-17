@@ -22,6 +22,8 @@ def test_schema_lists_the_public_endpoints() -> None:
         "/api/v1/heart/features",
         "/api/v1/heart/models",
         "/api/v1/heart/predictions",
+        "/api/v1/auth/login",
+        "/api/v1/auth/me",
     ):
         assert path in paths
 

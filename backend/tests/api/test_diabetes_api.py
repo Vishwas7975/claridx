@@ -4,9 +4,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_diabetes_registry
+from app.api.deps import get_current_active_user, get_diabetes_registry
 from app.domain.diabetes_features import FEATURE_SPECS, LABELS
 from app.main import app
+from app.models.user import User, UserRole
 from app.services.diabetes_prediction import sensitivity_warning
 from app.services.diabetes_registry import DiabetesModelRegistry
 from ml.pipelines.diabetes import FEATURES, build_models
@@ -39,9 +40,21 @@ def diabetes_registry() -> DiabetesModelRegistry:
     )
 
 
+def _make_test_doctor() -> User:
+    return User(
+        id=999,
+        email="doctor@example.com",
+        full_name="Dr. Test Physician",
+        hashed_password="...",
+        role=UserRole.DOCTOR,
+        is_active=True,
+    )
+
+
 @pytest.fixture
 def client(diabetes_registry: DiabetesModelRegistry):
     app.dependency_overrides[get_diabetes_registry] = lambda: diabetes_registry
+    app.dependency_overrides[get_current_active_user] = _make_test_doctor
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -49,8 +62,10 @@ def client(diabetes_registry: DiabetesModelRegistry):
 @pytest.fixture
 def client_without_models():
     app.dependency_overrides.clear()
+    app.dependency_overrides[get_current_active_user] = _make_test_doctor
     app.state.diabetes_registry = None
-    return TestClient(app)
+    yield TestClient(app)
+    app.dependency_overrides.clear()
 
 
 def test_diabetes_prediction_returns_full_explanation_and_omits_agreement(client) -> None:
@@ -207,7 +222,6 @@ def test_models_endpoint_lists_both_models_with_correct_roles(client) -> None:
         "logistic_regression",
         "random_forest",
     }
-
 
 
 def _sample_sensitivity_result(uncertain: bool) -> SensitivityResult:

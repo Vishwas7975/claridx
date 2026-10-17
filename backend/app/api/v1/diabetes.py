@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 from fastapi import APIRouter
 
-from app.api.deps import DiabetesRegistryDep
+from app.api.deps import DiabetesRegistryDep, PredictionUserDep
 from app.domain.diabetes_features import FEATURE_SPECS
 from app.schemas.diabetes import (
     DiabetesPredictionRequest,
@@ -41,7 +41,9 @@ def list_models(registry: DiabetesRegistryDep) -> ModelsResponse:
 
 @router.post("/predictions", response_model=DiabetesPredictionResponse)
 def create_prediction(
-    payload: DiabetesPredictionRequest, registry: DiabetesRegistryDep
+    payload: DiabetesPredictionRequest,
+    registry: DiabetesRegistryDep,
+    _current_user: PredictionUserDep,
 ) -> DiabetesPredictionResponse:
     """Predict diabetes risk and explain it with SHAP and LIME (not stored)."""
     return DiabetesPredictionService(registry).predict(payload)

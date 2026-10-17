@@ -85,9 +85,7 @@ class SensitivityAnalyzer:
         missing = []
         for feature in self._features:
             val = row[feature].iloc[0]
-            if pd.isna(val) or (
-                feature in self._zero_as_missing and float(val) == 0.0
-            ):
+            if pd.isna(val) or (feature in self._zero_as_missing and float(val) == 0.0):
                 missing.append(feature)
 
         if not missing:
