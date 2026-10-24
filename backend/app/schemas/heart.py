@@ -112,6 +112,26 @@ class SensitivityOut(BaseModel):
     note: str
 
 
+class ModelExecutionOut(BaseModel):
+    model_name: str
+    probability: float | None = None
+    predicted_positive: bool | None = None
+    threshold: float = 0.5
+    status: Literal["success", "failed"] = "success"
+    error_message: str | None = None
+
+
+class EnsembleOut(BaseModel):
+    aggregation_method: str = "majority_voting"
+    is_experimental: bool = True
+    predicted_positive: bool
+    votes_positive: int
+    votes_negative: int
+    total_models_evaluated: int
+    summary: str
+    model_results: list[ModelExecutionOut]
+
+
 class PredictionResponse(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
@@ -131,6 +151,8 @@ class PredictionResponse(BaseModel):
         description="Present only when some inputs were missing",
     )
     disclaimer: str
+    ensemble: EnsembleOut | None = None
+    record_id: str | None = None
 
 
 class OptionOut(BaseModel):

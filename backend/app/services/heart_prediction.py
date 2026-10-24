@@ -6,8 +6,10 @@ from app.domain.heart_features import LABELS
 from app.schemas.heart import (
     AgreementOut,
     ContributionOut,
+    EnsembleOut,
     ExplanationOut,
     FeatureImpactOut,
+    ModelExecutionOut,
     PatientInput,
     PredictionRequest,
     PredictionResponse,
@@ -131,6 +133,25 @@ class HeartPredictionService:
             if uncertainty_warning is not None:
                 warnings.append(uncertainty_warning)
 
+        # Multi-model consensus execution
+        (
+            consensus_pos,
+            votes_pos,
+            votes_neg,
+            model_results_raw,
+            summary,
+        ) = self._registry.predict_all(frame)
+        ensemble = EnsembleOut(
+            aggregation_method="majority_voting",
+            is_experimental=True,
+            predicted_positive=consensus_pos,
+            votes_positive=votes_pos,
+            votes_negative=votes_neg,
+            total_models_evaluated=len(model_results_raw),
+            summary=summary,
+            model_results=[ModelExecutionOut(**m) for m in model_results_raw],
+        )
+
         return PredictionResponse(
             model_name=request.model_name,
             model_version=self._registry.version,
@@ -150,4 +171,5 @@ class HeartPredictionService:
             ),
             sensitivity=None if sensitivity is None else _sensitivity_out(sensitivity),
             disclaimer=DISCLAIMER,
+            ensemble=ensemble,
         )

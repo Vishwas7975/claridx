@@ -118,5 +118,7 @@ def test_heart_prediction_response_shape_unchanged(client) -> None:
         "agreement",
         "sensitivity",
         "disclaimer",
+        "ensemble",
+        "record_id",
     }
     assert set(body.keys()) == expected_top_level_keys

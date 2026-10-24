@@ -4,9 +4,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.heart import (
     ContributionOut,
+    EnsembleOut,
     ExplanationOut,
     FeatureImpactOut,
     FeatureSpecOut,
+    ModelExecutionOut,
     ModelInfo,
     ModelsResponse,
     SensitivityOut,
@@ -125,6 +127,8 @@ class DiabetesPredictionResponse(BaseModel):
         description="Present only when some inputs were missing",
     )
     disclaimer: str
+    ensemble: EnsembleOut | None = None
+    record_id: str | None = None
 
 
 __all__ = [
@@ -133,7 +137,9 @@ __all__ = [
     "DiabetesPatientInput",
     "DiabetesPredictionRequest",
     "DiabetesPredictionResponse",
+    "EnsembleOut",
     "ExplanationOut",
+    "ModelExecutionOut",
     "FeatureImpactOut",
     "FeatureSpecOut",
     "ModelInfo",
