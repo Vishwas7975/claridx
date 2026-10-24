@@ -89,7 +89,7 @@ def require_roles(*allowed_roles: UserRole):
 
 PredictionUserDep = Annotated[
     User,
-    Depends(require_roles(UserRole.ADMIN, UserRole.DOCTOR)),
+    Depends(require_roles(UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT)),
 ]
 
 
