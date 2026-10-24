@@ -64,7 +64,7 @@ precision.
 - It does not replace professional medical judgment.
 - It has not been validated on real patients.
 - Probabilities are **raw (uncalibrated)** model outputs. All responses carry `"calibrated": false`.
-- It does not support PDF report generation, audit logging, or server-side token revocation (future work).
+- It does not parse uploaded medical PDF documents/lab sheets (deferred to Phase 2; downloadable clinical decision-support PDF generation is supported).
 
 ---
 
@@ -84,9 +84,15 @@ These objectives are grounded in the project proposal:
 | Sensitivity analysis for uncertain inputs | ✅ Implemented |
 | Clinical decision-support dashboard | ✅ Implemented |
 | Transparent presentation of limitations | ✅ Implemented |
+| Public account registration (least-privileged PATIENT role) | ✅ Implemented |
+| Patient-oriented dashboard with simplified explanations | ✅ Implemented |
+| Four-model automatic execution and consensus evaluation | ✅ Implemented |
+| Persisted prediction history with strict ownership | ✅ Implemented |
+| Downloadable PDF clinical decision summaries | ✅ Implemented |
+| Uploaded medical report document parsing (P2) | 🔲 Deferred future work |
 | Calibrated probability scores | 🔲 Future work |
 | Counterfactual / what-if analysis | 🔲 Future work |
-| PDF report generation | 🔲 Future work |
+| PDF report generation (ReportLab) | ✅ Implemented |
 | Fairness / subgroup analysis | 🔲 Future work |
 | Audit log | 🔲 Future work |
 
@@ -99,18 +105,17 @@ These objectives are grounded in the project proposal:
 - **Heart disease** — UCI Cleveland dataset (303 patients, 13 features).
 - **Diabetes** — Pima Indians Diabetes Database via OpenML ID 37 (768 patients, 8 features).
 
-### Machine-learning models
+### Multi-model evaluation and consensus
 
-Both workflows expose four models selectable via the `model_name` request field:
+Every valid prediction request automatically evaluates all four trained algorithms:
+1. **Random Forest** (Tree-based ensemble)
+2. **Logistic Regression** (Linear baseline / glass-box reference)
+3. **Gradient Boosting** (Sequential boosted trees)
+4. **Multi-Layer Perceptron (MLP)** (Neural network classifier)
 
-| Model | Heart (default ★) | Diabetes (default ★) |
-|---|---|---|
-| Random Forest | ★ primary | available |
-| Logistic Regression | available | ★ primary |
-| Gradient Boosting | available | available |
-| MLP | available | available |
-
-The default model in each workflow is selected by the highest cross-validation ROC-AUC.
+- **Execution:** Each model executes its dedicated, validated scikit-learn preprocessing pipeline.
+- **Consensus rule:** The system computes a documented majority-voting consensus at the default decision threshold (0.50). If a tie occurs (e.g. 2 vs 2), the condition's primary validated model serves as tie-breaker.
+- **Transparency:** The aggregated output is explicitly tagged `is_experimental: true` with a clear explanation of individual votes, avoiding unvalidated claims of clinical superiority. Individual model outputs and probabilities remain accessible for clinical/technical review.
 
 ### Model evaluation
 
@@ -152,11 +157,26 @@ Selected performance (from persisted artifacts — not claimed clinical accuracy
   reports the resulting probability range (10th–90th percentile, min, max).
 - Clinician-facing warnings for imputed values, out-of-distribution inputs, and uncertain verdicts.
 
+
+### Patient dashboard & plain-language explanations
+
+For users registered with the `patient` role, ClariDx provides a simplified, non-technical experience:
+- **Simplified Results:** Technical model selector dropdowns, raw log-odds, and surrogate model metrics are hidden. The view highlights:
+  1. The condition assessed (Heart Disease or Type 2 Diabetes).
+  2. The plain-language outcome indicator (*Elevated Risk Detected* or *Lower Risk Indicated*).
+  3. The top 4 most influential health measurements from SHAP explanations, indicating whether each measurement pushed toward or away from elevated risk.
+  4. Multi-model consensus summary.
+  5. Mandatory non-diagnostic clinical safety disclaimer.
+- **Diabetes Input Respectfulness:** The `Pregnancies` feature (from the retrospective Pima Indian dataset cohort) is respectfully labelled *"Number of previous pregnancies"* with an explanatory hint that it is a historical research dataset input rather than an autonomous diagnostic criterion.
+- **Patient-Friendly Result Guidance:** Each assessment result provides compact, calm guidance sections including *"What This Result Means"* (clarifying that the result is an informational decision-support indicator from retrospective training data rather than a medical diagnosis) and *"What to Do Next"* (advising consultations with a physician, warning against altering medications based solely on AI, and directing patients with acute symptoms to emergency services).
+- **Prediction History & Timestamp Handling:** Patients can review past assessments chronologically, inspect factor contributions, and monitor changes over time with strict row-level privacy (patients can never access another patient's data). Timestamps are stored in UTC, serialized as timezone-aware ISO 8601 strings, rendered in the user's local timezone with explicit timezone indicators in the web interface, and explicitly labelled as UTC in downloadable reports.
+- **Downloadable PDF Reports:** Patients can download official clinical decision-support summaries (`GET /api/v1/history/{record_id}/pdf`) formatted using ReportLab. Reports feature sanitized patient values, top contributing factors, 4-model votes, assessment timestamp in UTC, patient interpretation and next-step guidance, and bold medical disclaimers suitable for clinical consultations.
+
 ### Authentication and access control
 
 - JWT bearer tokens (HS256, default 30-minute expiry).
 - Argon2id password hashing.
-- Roles: **Admin**, **Doctor**, **Researcher**.
+- Roles: **Patient**, **Doctor**, **Admin**, **Researcher**.
 - Prediction endpoints require Doctor or Admin.
 - Researcher accounts: metadata only (no predictions).
 - Secure admin-provisioning CLI.
@@ -475,12 +495,13 @@ qualified clinician.
 
 ### Roles and permissions
 
-| Role | Run predictions | Feature/model metadata | Sign in |
-|---|---|---|---|
-| **Admin** | ✅ | ✅ | ✅ |
-| **Doctor** | ✅ | ✅ | ✅ |
-| **Researcher** | ❌ (HTTP 403) | ✅ | ✅ |
-| Unauthenticated | ❌ (HTTP 401) | ✅ | — |
+| Role | Run predictions | View own history & PDF | Advanced XAI metrics | Sign in |
+|---|---|---|---|---|
+| **Admin** | ✅ | ✅ | ✅ | ✅ |
+| **Doctor** | ✅ | ✅ (assigned patients) | ✅ | ✅ |
+| **Patient** | ✅ | ✅ (own records only) | ❌ (simplified UI) | ✅ |
+| **Researcher** | ❌ (HTTP 403) | ❌ | ✅ | ✅ |
+| Unauthenticated | ❌ (HTTP 401) | ❌ | ❌ | — |
 
 ### Signing in
 
@@ -505,15 +526,23 @@ Authorization: Bearer <token>
 
 Returns: `id`, `email`, `full_name`, `role`, `is_active`, `last_login_at`.
 
-### Provisioning accounts (CLI only)
+### Public account registration (Web UI & API)
 
-No public registration endpoint exists. Run from `backend/`:
+Public self-registration is available for patients:
+- **Web UI:** Click **Create an account** on the login page or visit `/register`.
+- **API:** `POST /api/v1/auth/register`
+- **Security:** All self-registered users are assigned the least-privileged `PATIENT` role by default. Clients cannot choose or supply a role. Passwords are validated (min 8 characters) and hashed using Argon2id.
+- **Abuse prevention:** Email uniqueness is enforced; duplicate registration attempts fail gracefully with clear feedback without leaking existing user enumeration details.
+
+### Provisioning privileged accounts (CLI only)
+
+Privileged roles (`ADMIN`, `DOCTOR`, `RESEARCHER`) cannot be self-registered and must be provisioned via the administrative CLI from `backend/`:
 
 ```bash
 uv run python -m app.cli.create_user
 ```
 
-See [SETUP_AND_TESTING.md §6](SETUP_AND_TESTING.md#6-create-the-initial-administrator-and-other-users).
+See [SETUP_AND_TESTING.md §6](SETUP_AND_TESTING.md#6-create-or-register-accounts).
 
 ### Logout and session
 
@@ -650,24 +679,24 @@ See [SETUP_AND_TESTING.md §10](SETUP_AND_TESTING.md#10-troubleshooting) for det
 
 ### Current limitations
 
+- **Medical report PDF document parsing is deferred (P2).** Uploading scanned medical PDFs and extracting clinical entities is deliberately deferred to future work. It requires a dedicated OCR pipeline, malware/antivirus quarantine scanning, HIPAA compliance guardrails, and human-in-the-loop verification before feeding extracted numbers into AI models. Generating PDF reports (`GET /api/v1/history/{record_id}/pdf`) is fully supported.
+
 - **Raw (uncalibrated) probabilities.** All responses carry `"calibrated": false`.
   Do not interpret probability values as clinically validated risk estimates.
 - **Small, historical datasets.** UCI Cleveland (303 patients, 1988) and Pima Indians
   (768 patients, collected up to 1990) are not representative of diverse modern populations.
 - **No clinical validation.** These models have not been tested against real patient cohorts.
 - **No token revocation.** JWTs remain valid until expiry; no server-side blocklist.
-- **Heart disease API exposes two models.** Random Forest and Logistic Regression are
-  served via the API. Gradient Boosting and MLP are trained and stored but not exposed.
+- **Four-model majority voting is experimental.** The system executes Random Forest, Logistic Regression, Gradient Boosting, and MLP concurrently and calculates a consensus outcome. While transparent, majority voting is an uncalibrated heuristic and must not be interpreted as an ensemble with proven prospective superiority.
 
 ### Not implemented (future work)
 
+- Medical report document PDF parsing (OCR of clinical lab sheets; deferred to Phase 2).
 - Probability calibration (Platt scaling or isotonic regression).
 - Counterfactual / "what-if" recommendations.
-- PDF report export.
 - Fairness and subgroup analysis.
 - Token revocation / session management.
 - Audit log.
-- Plain-language explanation narratives.
 
 ---
 

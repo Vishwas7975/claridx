@@ -70,10 +70,17 @@ Node 24 (or Node.js ≥ 22.19) is required. The test runner (`jsdom` / `undici`)
 
 ## 2. Get the project
 
-Open a terminal and clone the repository (replace the URL if your copy is hosted elsewhere):
+### Option A: From a ZIP delivery package
+1. Extract the ZIP file onto your computer.
+2. Open your terminal (Linux/macOS) or PowerShell (Windows) and navigate into the extracted directory:
+   ```bash
+   cd claridx
+   ```
 
+### Option B: From GitHub
+Clone the repository and enter the directory:
 ```bash
-git clone <repository-url> claridx
+git clone https://github.com/Vishwas7975/claridx.git claridx
 cd claridx
 ```
 
@@ -209,9 +216,10 @@ Run the Alembic migrations to create the schema:
 uv run alembic upgrade head
 ```
 
-Expected output ends with something like:
+Expected output ends with:
 ```
 Running upgrade  -> 7ebd580e5261, create users table
+Running upgrade 7ebd580e5261 -> e9cfaab37c7e, create prediction history table
 ```
 
 Verify the schema was created:
@@ -219,7 +227,7 @@ Verify the schema was created:
 mysql -u claridx_app -p claridx_dev -e "SHOW TABLES;"
 ```
 
-You should see the `users` table listed.
+You should see `alembic_version`, `prediction_history`, and `users` tables listed.
 
 ### 3.6 Download and prepare the datasets
 
@@ -235,7 +243,7 @@ uv run python -m ml.scripts.download_heart
 uv run python -m ml.scripts.download_diabetes
 ```
 
-Each script downloads the dataset to `backend/ml/datasets/raw/` and prints a SHA-256 hash
+Each script downloads the dataset to `backend/ml/data/raw/` and prints a SHA-256 hash
 for verification. Expected hashes:
 
 | Dataset | SHA-256 |
@@ -419,9 +427,11 @@ Attempting to navigate to a prediction will redirect you to the login screen.
 
 ---
 
-## 6. Create the initial administrator and other users
+## 6. User accounts: public patient registration and privileged CLI provisioning
 
-User accounts can only be created through the secure CLI. No public registration endpoint exists.
+ClariDx enforces strict separation between public patient accounts and clinical/administrative accounts:
+- **Patients (Self-Registration):** Publicly available via the web UI ("Create an account" on the login page or `/register`) and the API (`POST /api/v1/auth/register`). Self-registered accounts are automatically and strictly assigned the least-privileged `PATIENT` role. Clients cannot select or elevate roles.
+- **Privileged Accounts (CLI Only):** Privileged roles (`doctor`, `admin`, `researcher`) cannot self-register and must be provisioned through the administrative CLI described below.
 
 ### Interactive mode (recommended for first use)
 
@@ -629,6 +639,39 @@ Use this checklist to verify the full system works correctly. Mark each item as 
 
 The example values below are synthetic, illustrative values appropriate to the schema.
 They do not represent real patients.
+
+### Patient workflow, history, and PDF reporting
+
+- [ ] **Public patient registration**
+  - On the sign-in screen, click **Create an account**.
+  - Test the independent eye icons on Password and Confirm Password to verify visibility toggling.
+  - Fill in Name, Email, and matching Password (≥ 8 characters), and submit.
+  - ✅ Expected: account created, automatic login, and landing on the dedicated **Patient Dashboard** with `Overview`, `New Assessment`, `My History & Reports`, and `Account Security` tabs.
+
+- [ ] **Heart disease patient assessment**
+  - On the Patient Dashboard, select **New Assessment** and choose **Heart Disease**.
+  - Notice that patients do not need to choose a machine learning model; the system automatically evaluates all 4 models in the background.
+  - Click **Example: typical high risk** and submit.
+  - ✅ Expected: displays "Elevated Risk Detected", multi-model consensus count (e.g. 4 of 4), "What This Result Means", "What to Do Next", and SHAP factors attributed to the primary model (Random Forest).
+
+- [ ] **Download clinical PDF report**
+  - Click **Download Clinical Report (PDF)**.
+  - Open the downloaded PDF.
+  - ✅ Expected: PDF opens cleanly, includes `Assessment Timestamp (UTC): ... UTC`, shows the 4-model evaluation table, primary model SHAP factors, safety disclaimer, and identical "What this result means" & "What to do next" guidance.
+
+- [ ] **Diabetes patient assessment & pregnancies input**
+  - Select **New Assessment** -> **Diabetes**.
+  - Notice the **Number of pregnancies** field helper text: `(0 is valid if non-applicable or never pregnant)`.
+  - Click **Example: low risk** and submit.
+  - ✅ Expected: displays "Lower Risk Indicated", adapted patient guidance, and enables PDF download.
+
+- [ ] **Longitudinal history & timezone presentation**
+  - Navigate to **My History & Reports**.
+  - ✅ Expected: both past assessments appear chronologically; timestamps display local browser time with resolved IANA timezone alongside the exact UTC timestamp; past reports can be re-downloaded.
+
+- [ ] **Logout navigation**
+  - Click **Sign out**.
+  - ✅ Expected: redirected immediately to the Sign In page (not register or dashboard).
 
 ### Authentication
 

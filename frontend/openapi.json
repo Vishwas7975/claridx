@@ -280,6 +280,16 @@
             "title": "Disclaimer",
             "type": "string"
           },
+          "ensemble": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnsembleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "imputed_features": {
             "items": {
               "type": "string"
@@ -306,6 +316,17 @@
             "description": "Predicted probability of diabetes",
             "title": "Probability",
             "type": "number"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Id"
           },
           "sensitivity": {
             "anyOf": [
@@ -347,6 +368,57 @@
           "disclaimer"
         ],
         "title": "DiabetesPredictionResponse",
+        "type": "object"
+      },
+      "EnsembleOut": {
+        "properties": {
+          "aggregation_method": {
+            "default": "majority_voting",
+            "title": "Aggregation Method",
+            "type": "string"
+          },
+          "is_experimental": {
+            "default": true,
+            "title": "Is Experimental",
+            "type": "boolean"
+          },
+          "model_results": {
+            "items": {
+              "$ref": "#/components/schemas/ModelExecutionOut"
+            },
+            "title": "Model Results",
+            "type": "array"
+          },
+          "predicted_positive": {
+            "title": "Predicted Positive",
+            "type": "boolean"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "total_models_evaluated": {
+            "title": "Total Models Evaluated",
+            "type": "integer"
+          },
+          "votes_negative": {
+            "title": "Votes Negative",
+            "type": "integer"
+          },
+          "votes_positive": {
+            "title": "Votes Positive",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "predicted_positive",
+          "votes_positive",
+          "votes_negative",
+          "total_models_evaluated",
+          "summary",
+          "model_results"
+        ],
+        "title": "EnsembleOut",
         "type": "object"
       },
       "ExplanationOut": {
@@ -563,6 +635,216 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HistoryListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryRecordOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "HistoryListResponse",
+        "type": "object"
+      },
+      "HistoryRecordOut": {
+        "properties": {
+          "aggregation_method": {
+            "description": "Method used: majority_voting or single_model",
+            "title": "Aggregation Method",
+            "type": "string"
+          },
+          "condition": {
+            "description": "Condition evaluated: heart or diabetes",
+            "title": "Condition",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Timestamp when assessment was performed",
+            "title": "Created At",
+            "type": "string"
+          },
+          "input_summary": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Minimal non-sensitive input measurements summary",
+            "title": "Input Summary"
+          },
+          "is_experimental": {
+            "description": "True if experimental/unvalidated consensus was used",
+            "title": "Is Experimental",
+            "type": "boolean"
+          },
+          "model_results": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Detailed results from each candidate model",
+            "title": "Model Results"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model release version identifier",
+            "title": "Model Version"
+          },
+          "predicted_label": {
+            "description": "Clinical outcome text, e.g. Positive / Negative",
+            "title": "Predicted Label",
+            "type": "string"
+          },
+          "predicted_positive": {
+            "description": "True if outcome is positive",
+            "title": "Predicted Positive",
+            "type": "boolean"
+          },
+          "probability": {
+            "description": "Primary model or consensus probability score",
+            "title": "Probability",
+            "type": "number"
+          },
+          "record_id": {
+            "description": "Unique UUID for this prediction record",
+            "title": "Record Id",
+            "type": "string"
+          },
+          "threshold": {
+            "description": "Decision threshold",
+            "title": "Threshold",
+            "type": "number"
+          },
+          "top_factors": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Top influential factors from SHAP explainer",
+            "title": "Top Factors"
+          }
+        },
+        "required": [
+          "record_id",
+          "condition",
+          "predicted_label",
+          "predicted_positive",
+          "probability",
+          "threshold",
+          "aggregation_method",
+          "is_experimental",
+          "created_at"
+        ],
+        "title": "HistoryRecordOut",
+        "type": "object"
+      },
+      "ModelExecutionOut": {
+        "properties": {
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "predicted_positive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted Positive"
+          },
+          "probability": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Probability"
+          },
+          "status": {
+            "default": "success",
+            "enum": [
+              "success",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold": {
+            "default": 0.5,
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "ModelExecutionOut",
         "type": "object"
       },
       "ModelInfo": {
@@ -880,6 +1162,16 @@
             "title": "Disclaimer",
             "type": "string"
           },
+          "ensemble": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnsembleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "imputed_features": {
             "items": {
               "type": "string"
@@ -906,6 +1198,17 @@
             "description": "Predicted probability of heart disease",
             "title": "Probability",
             "type": "number"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Id"
           },
           "sensitivity": {
             "anyOf": [
@@ -948,6 +1251,43 @@
           "disclaimer"
         ],
         "title": "PredictionResponse",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "description": "Payload for public user self-registration.",
+        "properties": {
+          "confirm_password": {
+            "description": "Confirmation of password",
+            "minLength": 8,
+            "title": "Confirm Password",
+            "type": "string"
+          },
+          "email": {
+            "description": "User's email address",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "description": "User's full name",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "password": {
+            "description": "User plaintext password (min 8 chars)",
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "full_name",
+          "password",
+          "confirm_password"
+        ],
+        "title": "RegisterRequest",
         "type": "object"
       },
       "SensitivityOut": {
@@ -1104,7 +1444,8 @@
         "enum": [
           "admin",
           "doctor",
-          "researcher"
+          "researcher",
+          "patient"
         ],
         "title": "UserRole",
         "type": "string"
@@ -1269,6 +1610,48 @@
         ]
       }
     },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Register a new patient account and return a bearer access token.\n\nAlways assigns UserRole.PATIENT regardless of client payload. Privileged roles\n(DOCTOR, ADMIN, RESEARCHER) can only be provisioned by administrators via CLI.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/diabetes/features": {
       "get": {
         "description": "Input features with labels, units and allowed values, in form display order.",
@@ -1318,7 +1701,7 @@
     },
     "/api/v1/diabetes/predictions": {
       "post": {
-        "description": "Predict diabetes risk and explain it with SHAP and LIME (not stored).",
+        "description": "Predict diabetes risk, evaluate all 4 models, and store prediction history.",
         "operationId": "create_prediction_api_v1_diabetes_predictions_post",
         "requestBody": {
           "content": {
@@ -1464,7 +1847,7 @@
     },
     "/api/v1/heart/predictions": {
       "post": {
-        "description": "Predict heart disease risk and explain it with SHAP and LIME (not stored).",
+        "description": "Predict heart disease risk, evaluate all 4 models, and store prediction history.",
         "operationId": "create_prediction_api_v1_heart_predictions_post",
         "requestBody": {
           "content": {
@@ -1506,6 +1889,178 @@
         "summary": "Create Prediction",
         "tags": [
           "heart disease"
+        ]
+      }
+    },
+    "/api/v1/history": {
+      "get": {
+        "description": "Retrieve paginated prediction history.\n\nPatients can only view their own prediction records.\nDoctors and administrators can view history across patients.",
+        "operationId": "list_history_api_v1_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "condition",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Condition"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List History",
+        "tags": [
+          "prediction history"
+        ]
+      }
+    },
+    "/api/v1/history/{record_id}": {
+      "get": {
+        "description": "Retrieve detailed prediction record by UUID.\n\nEnforces ownership: Patients can only view records they created.",
+        "operationId": "get_history_detail_api_v1_history__record_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get History Detail",
+        "tags": [
+          "prediction history"
+        ]
+      }
+    },
+    "/api/v1/history/{record_id}/pdf": {
+      "get": {
+        "description": "Generate and download a validated clinical decision support PDF report.\n\nEnforces ownership: Patients can only download their own reports.",
+        "operationId": "download_history_pdf_api_v1_history__record_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Download History Pdf",
+        "tags": [
+          "prediction history"
         ]
       }
     }

@@ -49,6 +49,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register
+         * @description Register a new patient account and return a bearer access token.
+         *
+         *     Always assigns UserRole.PATIENT regardless of client payload. Privileged roles
+         *     (DOCTOR, ADMIN, RESEARCHER) can only be provisioned by administrators via CLI.
+         */
+        post: operations["register_api_v1_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/diabetes/features": {
         parameters: {
             query?: never;
@@ -97,7 +120,7 @@ export interface paths {
         put?: never;
         /**
          * Create Prediction
-         * @description Predict diabetes risk and explain it with SHAP and LIME (not stored).
+         * @description Predict diabetes risk, evaluate all 4 models, and store prediction history.
          */
         post: operations["create_prediction_api_v1_diabetes_predictions_post"];
         delete?: never;
@@ -194,9 +217,76 @@ export interface paths {
         put?: never;
         /**
          * Create Prediction
-         * @description Predict heart disease risk and explain it with SHAP and LIME (not stored).
+         * @description Predict heart disease risk, evaluate all 4 models, and store prediction history.
          */
         post: operations["create_prediction_api_v1_heart_predictions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List History
+         * @description Retrieve paginated prediction history.
+         *
+         *     Patients can only view their own prediction records.
+         *     Doctors and administrators can view history across patients.
+         */
+        get: operations["list_history_api_v1_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/history/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History Detail
+         * @description Retrieve detailed prediction record by UUID.
+         *
+         *     Enforces ownership: Patients can only view records they created.
+         */
+        get: operations["get_history_detail_api_v1_history__record_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/history/{record_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download History Pdf
+         * @description Generate and download a validated clinical decision support PDF report.
+         *
+         *     Enforces ownership: Patients can only download their own reports.
+         */
+        get: operations["download_history_pdf_api_v1_history__record_id__pdf_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -327,6 +417,7 @@ export interface components {
             calibrated: boolean;
             /** Disclaimer */
             disclaimer: string;
+            ensemble?: components["schemas"]["EnsembleOut"] | null;
             /** Imputed Features */
             imputed_features: string[];
             lime: components["schemas"]["ExplanationOut"];
@@ -341,6 +432,8 @@ export interface components {
              * @description Predicted probability of diabetes
              */
             probability: number;
+            /** Record Id */
+            record_id?: string | null;
             /** @description Present only when some inputs were missing */
             sensitivity?: components["schemas"]["SensitivityOut"] | null;
             shap: components["schemas"]["ExplanationOut"];
@@ -348,6 +441,31 @@ export interface components {
             threshold: number;
             /** Warnings */
             warnings: string[];
+        };
+        /** EnsembleOut */
+        EnsembleOut: {
+            /**
+             * Aggregation Method
+             * @default majority_voting
+             */
+            aggregation_method: string;
+            /**
+             * Is Experimental
+             * @default true
+             */
+            is_experimental: boolean;
+            /** Model Results */
+            model_results: components["schemas"]["ModelExecutionOut"][];
+            /** Predicted Positive */
+            predicted_positive: boolean;
+            /** Summary */
+            summary: string;
+            /** Total Models Evaluated */
+            total_models_evaluated: number;
+            /** Votes Negative */
+            votes_negative: number;
+            /** Votes Positive */
+            votes_positive: number;
         };
         /** ExplanationOut */
         ExplanationOut: {
@@ -442,6 +560,113 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HistoryListResponse */
+        HistoryListResponse: {
+            /** Items */
+            items: components["schemas"]["HistoryRecordOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** HistoryRecordOut */
+        HistoryRecordOut: {
+            /**
+             * Aggregation Method
+             * @description Method used: majority_voting or single_model
+             */
+            aggregation_method: string;
+            /**
+             * Condition
+             * @description Condition evaluated: heart or diabetes
+             */
+            condition: string;
+            /**
+             * Created At
+             * @description Timestamp when assessment was performed
+             */
+            created_at: string;
+            /**
+             * Input Summary
+             * @description Minimal non-sensitive input measurements summary
+             */
+            input_summary?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Is Experimental
+             * @description True if experimental/unvalidated consensus was used
+             */
+            is_experimental: boolean;
+            /**
+             * Model Results
+             * @description Detailed results from each candidate model
+             */
+            model_results?: {
+                [key: string]: unknown;
+            }[] | null;
+            /**
+             * Model Version
+             * @description Model release version identifier
+             */
+            model_version?: string | null;
+            /**
+             * Predicted Label
+             * @description Clinical outcome text, e.g. Positive / Negative
+             */
+            predicted_label: string;
+            /**
+             * Predicted Positive
+             * @description True if outcome is positive
+             */
+            predicted_positive: boolean;
+            /**
+             * Probability
+             * @description Primary model or consensus probability score
+             */
+            probability: number;
+            /**
+             * Record Id
+             * @description Unique UUID for this prediction record
+             */
+            record_id: string;
+            /**
+             * Threshold
+             * @description Decision threshold
+             */
+            threshold: number;
+            /**
+             * Top Factors
+             * @description Top influential factors from SHAP explainer
+             */
+            top_factors?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
+        /** ModelExecutionOut */
+        ModelExecutionOut: {
+            /** Error Message */
+            error_message?: string | null;
+            /** Model Name */
+            model_name: string;
+            /** Predicted Positive */
+            predicted_positive?: boolean | null;
+            /** Probability */
+            probability?: number | null;
+            /**
+             * Status
+             * @default success
+             * @enum {string}
+             */
+            status: "success" | "failed";
+            /**
+             * Threshold
+             * @default 0.5
+             */
+            threshold: number;
         };
         /** ModelInfo */
         ModelInfo: {
@@ -561,6 +786,7 @@ export interface components {
             calibrated: boolean;
             /** Disclaimer */
             disclaimer: string;
+            ensemble?: components["schemas"]["EnsembleOut"] | null;
             /** Imputed Features */
             imputed_features: string[];
             lime: components["schemas"]["ExplanationOut"];
@@ -575,6 +801,8 @@ export interface components {
              * @description Predicted probability of heart disease
              */
             probability: number;
+            /** Record Id */
+            record_id?: string | null;
             /** @description Present only when some inputs were missing */
             sensitivity?: components["schemas"]["SensitivityOut"] | null;
             shap: components["schemas"]["ExplanationOut"];
@@ -582,6 +810,32 @@ export interface components {
             threshold: number;
             /** Warnings */
             warnings: string[];
+        };
+        /**
+         * RegisterRequest
+         * @description Payload for public user self-registration.
+         */
+        RegisterRequest: {
+            /**
+             * Confirm Password
+             * @description Confirmation of password
+             */
+            confirm_password: string;
+            /**
+             * Email
+             * @description User's email address
+             */
+            email: string;
+            /**
+             * Full Name
+             * @description User's full name
+             */
+            full_name: string;
+            /**
+             * Password
+             * @description User plaintext password (min 8 chars)
+             */
+            password: string;
         };
         /**
          * SensitivityOut
@@ -684,7 +938,7 @@ export interface components {
          * UserRole
          * @enum {string}
          */
-        UserRole: "admin" | "doctor" | "researcher";
+        UserRole: "admin" | "doctor" | "researcher" | "patient";
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -770,6 +1024,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserProfileResponse"];
+                };
+            };
+        };
+    };
+    register_api_v1_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -951,6 +1238,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_history_api_v1_history_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                condition?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_detail_api_v1_history__record_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryRecordOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_history_pdf_api_v1_history__record_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
