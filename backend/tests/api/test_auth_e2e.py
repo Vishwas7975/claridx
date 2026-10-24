@@ -79,6 +79,10 @@ def client() -> TestClient:
 @pytest.fixture
 def clean_db():
     with SessionLocal() as db:
+        # Pre-clean any leftover accounts from interrupted runs
+        for u in db.query(User).filter(User.email.like("%@e2e.claridx.test")).all():
+            db.delete(u)
+        db.commit()
         yield db
         # Clean up test accounts created during E2E test
         users = db.query(User).filter(User.email.like("%@e2e.claridx.test")).all()

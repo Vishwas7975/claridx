@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, Enum, String, true
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.mixins import TimestampMixin
@@ -12,6 +15,7 @@ class UserRole(enum.StrEnum):
     ADMIN = "admin"
     DOCTOR = "doctor"
     RESEARCHER = "researcher"
+    PATIENT = "patient"
 
 
 class User(TimestampMixin, Base):
@@ -35,6 +39,16 @@ class User(TimestampMixin, Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+    predictions: Mapped[list[PredictionHistory]] = relationship(
+        "PredictionHistory",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r} role={self.role}>"
+
+
+if TYPE_CHECKING:
+    from app.models.prediction_history import PredictionHistory

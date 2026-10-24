@@ -14,8 +14,8 @@ from starlette.datastructures import Headers
 
 from app.api.deps import CurrentUserDep, DbDep
 from app.core.security import create_access_token, hash_password, verify_password
-from app.models.user import User
-from app.schemas.auth import LoginRequest, TokenResponse, UserProfileResponse
+from app.models.user import User, UserRole
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserProfileResponse
 
 router = APIRouter()
 
@@ -207,3 +207,43 @@ def read_current_user(
 ) -> User:
     """Retrieve the safe profile of the currently authenticated active user."""
     return current_user
+
+
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register(
+    request: RegisterRequest,
+    db: DbDep,
+) -> TokenResponse:
+    """Register a new patient account and return a bearer access token.
+
+    Always assigns UserRole.PATIENT regardless of client payload. Privileged roles
+    (DOCTOR, ADMIN, RESEARCHER) can only be provisioned by administrators via CLI.
+    """
+    email_clean = request.email.strip().lower()
+    existing = db.scalars(select(User).where(User.email == email_clean)).first()
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email address already exists.",
+        )
+
+    user = User(
+        email=email_clean,
+        hashed_password=hash_password(request.password),
+        full_name=request.full_name,
+        role=UserRole.PATIENT,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    user.last_login_at = datetime.now(UTC)
+    db.commit()
+
+    access_token = create_access_token(subject=user.id)
+    return TokenResponse(access_token=access_token, token_type="bearer")

@@ -4,9 +4,10 @@ import { useAuth } from './AuthContext'
 
 interface Props {
   onRequestAccess: () => void
+  onRegister?: () => void
 }
 
-export function LoginForm({ onRequestAccess }: Props) {
+export function LoginForm({ onRequestAccess, onRegister }: Props) {
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -227,7 +228,22 @@ export function LoginForm({ onRequestAccess }: Props) {
             </div>
           </form>
 
-          <p className="login-footer-link" style={{ marginTop: '1.5rem' }}>
+          {onRegister && (
+            <p className="login-footer-link" style={{ marginTop: '1.25rem', fontWeight: 500 }}>
+              New patient?{' '}
+              <a
+                href="#register"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onRegister()
+                }}
+              >
+                Create an account
+              </a>
+            </p>
+          )}
+
+          <p className="login-footer-link" style={{ marginTop: '0.75rem' }}>
             Need access?{' '}
             <a
               href="#request-access"

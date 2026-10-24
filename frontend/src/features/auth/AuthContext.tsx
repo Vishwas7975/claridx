@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, onUnauthorized, setAuthToken } from '../../api/client'
 import { toApiError } from '../../api/errors'
-import type { LoginRequest, UserProfile } from '../../api/types'
+import type { LoginRequest, RegisterRequest, UserProfile } from '../../api/types'
 
 const TOKEN_STORAGE_KEY = 'claridx_token'
 const USER_STORAGE_KEY = 'claridx_user'
@@ -12,6 +12,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   isLoading: boolean
   login: (credentials: LoginRequest) => Promise<void>
+  register: (payload: RegisterRequest) => Promise<void>
   logout: () => void
 }
 
@@ -21,6 +22,7 @@ const defaultContext: AuthContextValue = {
   isAuthenticated: false,
   isLoading: false,
   login: async () => {},
+  register: async () => {},
   logout: () => {},
 }
 
@@ -67,6 +69,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokenState(null)
     setUser(null)
   }, [])
+
+  const register = useCallback(
+    async ({ email, full_name, password, confirm_password }: RegisterRequest) => {
+      const { data, error, response } = await api.POST('/api/v1/auth/register', {
+        body: {
+          email: email.trim(),
+          full_name: full_name.trim(),
+          password,
+          confirm_password,
+        },
+      })
+      if (data === undefined) {
+        throw toApiError(error, response.status)
+      }
+
+      const receivedToken = data.access_token
+      setAuthToken(receivedToken)
+
+      const {
+        data: meData,
+        error: meError,
+        response: meResponse,
+      } = await api.GET('/api/v1/auth/me')
+      if (meData === undefined) {
+        setAuthToken(null)
+        throw toApiError(meError, meResponse.status)
+      }
+
+      try {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, receivedToken)
+        sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(meData))
+      } catch {
+        // Storage might be restricted; session will remain in memory
+      }
+      setTokenState(receivedToken)
+      setUser(meData)
+    },
+    [],
+  )
 
   const login = useCallback(async ({ email, password }: LoginRequest) => {
     const { data, error, response } = await api.POST('/api/v1/auth/login', {
@@ -161,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: Boolean(user && token),
     isLoading,
     login,
+    register,
     logout,
   }
 
