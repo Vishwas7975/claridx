@@ -30,3 +30,9 @@ export interface LoginRequest {
   email: string
   password: string
 }
+
+export type RegisterRequest = Schemas['RegisterRequest']
+export type HistoryRecord = Schemas['HistoryRecordOut']
+export type HistoryListResponse = Schemas['HistoryListResponse']
+export type EnsembleOut = Schemas['EnsembleOut']
+export type ModelExecutionOut = Schemas['ModelExecutionOut']

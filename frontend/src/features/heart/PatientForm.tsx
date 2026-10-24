@@ -37,6 +37,7 @@ interface Props {
   submitting: boolean
   onSubmit: () => void
   canPredict?: boolean
+  hideModelSelector?: boolean
 }
 
 function rangeHint(spec: FeatureSpec): string | null {
@@ -173,6 +174,7 @@ export function PatientForm({
   submitting,
   onSubmit,
   canPredict = true,
+  hideModelSelector = false,
 }: Props) {
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set())
   const validation = validateForm(specs, values)
@@ -254,24 +256,26 @@ export function PatientForm({
         ))}
       </div>
 
-      <div className="field model">
-        <label htmlFor="model">Model</label>
-        <select
-          id="model"
-          value={modelName}
-          aria-describedby="heart-model-desc"
-          onChange={(event) => onModelChange(event.target.value as ModelName)}
-        >
-          {MODEL_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value} label={option.shortLabel}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <p id="heart-model-desc" className="hint model-desc">
-          {MODEL_OPTIONS.find((option) => option.value === modelName)?.description}
-        </p>
-      </div>
+      {!hideModelSelector && (
+        <div className="field model">
+          <label htmlFor="model">Model</label>
+          <select
+            id="model"
+            value={modelName}
+            aria-describedby="heart-model-desc"
+            onChange={(event) => onModelChange(event.target.value as ModelName)}
+          >
+            {MODEL_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value} label={option.shortLabel}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p id="heart-model-desc" className="hint model-desc">
+            {MODEL_OPTIONS.find((option) => option.value === modelName)?.description}
+          </p>
+        </div>
+      )}
 
       <p role="status" className="status">
         {status}

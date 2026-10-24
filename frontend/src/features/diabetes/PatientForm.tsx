@@ -36,6 +36,7 @@ interface Props {
   submitting: boolean
   onSubmit: () => void
   canPredict?: boolean
+  hideModelSelector?: boolean
 }
 
 function rangeHint(spec: FeatureSpec): string | null {
@@ -94,7 +95,9 @@ function Field({ spec, value, error, onChange, onBlur }: FieldProps) {
       )}
       {hint !== null && (
         <p id={`${id}-hint`} className="hint">
-          {hint}
+          {spec.name === 'preg'
+            ? `${hint} • Research cohort input; enter applicable count (0–25) or leave blank if unknown/not applicable.`
+            : hint}
         </p>
       )}
       {error !== null && (
@@ -174,6 +177,7 @@ export function PatientForm({
   submitting,
   onSubmit,
   canPredict = true,
+  hideModelSelector = false,
 }: Props) {
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set())
   const validation = validateForm(specs, values)
@@ -256,26 +260,28 @@ export function PatientForm({
         ))}
       </div>
 
-      <div className="field model">
-        <label htmlFor="model">Model</label>
-        <select
-          id="model"
-          value={modelName}
-          aria-describedby="diabetes-model-desc"
-          onChange={(event) => onModelChange(event.target.value as DiabetesModelName)}
-        >
-          {modelOptions.map((option) => (
-            <option key={option.name} value={option.name} label={modelShortLabel(option.name)}>
-              {option.description || option.name}
-            </option>
-          ))}
-        </select>
-        {modelOptions.find((option) => option.name === modelName)?.description && (
-          <p id="diabetes-model-desc" className="hint model-desc">
-            {modelOptions.find((option) => option.name === modelName)?.description}
-          </p>
-        )}
-      </div>
+      {!hideModelSelector && (
+        <div className="field model">
+          <label htmlFor="model">Model</label>
+          <select
+            id="model"
+            value={modelName}
+            aria-describedby="diabetes-model-desc"
+            onChange={(event) => onModelChange(event.target.value as DiabetesModelName)}
+          >
+            {modelOptions.map((option) => (
+              <option key={option.name} value={option.name} label={modelShortLabel(option.name)}>
+                {option.description || option.name}
+              </option>
+            ))}
+          </select>
+          {modelOptions.find((option) => option.name === modelName)?.description && (
+            <p id="diabetes-model-desc" className="hint model-desc">
+              {modelOptions.find((option) => option.name === modelName)?.description}
+            </p>
+          )}
+        </div>
+      )}
 
       <p role="status" className="status">
         {status}

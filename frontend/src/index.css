@@ -203,6 +203,10 @@ ol {
   background: rgba(180, 83, 9, 0.3);
   color: #fcd34d;
 }
+.role-badge.role-patient {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
 
 .sign-out-btn {
   padding: 0.4rem 0.85rem;

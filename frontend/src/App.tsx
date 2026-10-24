@@ -1,18 +1,28 @@
 import { useState } from 'react'
 import { AuthProvider, useAuth } from './features/auth/AuthContext'
 import { LoginForm } from './features/auth/LoginForm'
+import { RegisterForm } from './features/auth/RegisterForm'
 import { RequestAccessPage } from './features/auth/RequestAccessPage'
 import { ResearcherNotice } from './features/auth/ResearcherNotice'
 import { PredictionPage as DiabetesPredictionPage } from './features/diabetes/PredictionPage'
 import { PredictionPage as HeartPredictionPage } from './features/heart/PredictionPage'
+import { PatientDashboard } from './features/patient/PatientDashboard'
 
 export type Condition = 'heart' | 'diabetes'
-export type View = 'login' | 'request-access'
+export type View = 'login' | 'register' | 'request-access'
 
 export function AppContent() {
   const { user, isAuthenticated, isLoading, logout } = useAuth()
   const [condition, setCondition] = useState<Condition>('heart')
   const [view, setView] = useState<View>('login')
+
+  const handleLogout = () => {
+    setView('login')
+    logout()
+  }
+
+  const isPatient = user?.role?.toLowerCase() === 'patient'
+  const isResearcher = user?.role?.toLowerCase() === 'researcher'
 
   return (
     <div className="app-root">
@@ -43,7 +53,7 @@ export function AppContent() {
               <button
                 type="button"
                 className="sign-out-btn"
-                onClick={logout}
+                onClick={handleLogout}
                 aria-label="Sign out of ClariDx"
               >
                 Sign out
@@ -67,23 +77,28 @@ export function AppContent() {
               Loading session…
             </p>
           ) : !isAuthenticated ? (
-            view === 'request-access' ? (
+            view === 'register' ? (
+              <RegisterForm onBackToLogin={() => setView('login')} />
+            ) : view === 'request-access' ? (
               <RequestAccessPage onBack={() => setView('login')} />
             ) : (
-              <LoginForm onRequestAccess={() => setView('request-access')} />
+              <LoginForm
+                onRequestAccess={() => setView('request-access')}
+                onRegister={() => setView('register')}
+              />
             )
+          ) : isPatient ? (
+            <PatientDashboard />
           ) : (
             <>
-              {user?.role?.toLowerCase() === 'researcher' && <ResearcherNotice />}
+              {isResearcher && <ResearcherNotice />}
 
               <div className="workspace-header">
                 <h1 className="workspace-title">
-                  {user?.role?.toLowerCase() === 'researcher'
-                    ? 'Model Inspection Workspace'
-                    : 'Clinical Decision Support'}
+                  {isResearcher ? 'Model Inspection Workspace' : 'Clinical Decision Support'}
                 </h1>
                 <p className="workspace-subtitle">
-                  {user?.role?.toLowerCase() === 'researcher'
+                  {isResearcher
                     ? 'Inspect feature definitions and model parameters across conditions.'
                     : 'Analyse patient measurements and review explainable AI predictions.'}
                 </p>
