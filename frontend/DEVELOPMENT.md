@@ -7,7 +7,7 @@ This document provides quick-reference notes and developer workflows for the Cla
 - **Framework**: React 19 + Vite
 - **Language**: TypeScript (~6.0)
 - **State & Data Fetching**: TanStack React Query v5 + `openapi-fetch`
-- **Testing**: Vitest + Testing Library (`jsdom` environment; requires Node.js ≥ 22.19, Node 24 recommended)
+- **Testing**: Vitest + Testing Library (`jsdom` environment; supports Node.js ≥ 20.20 via test shim `src/test/node-shim.cjs`, Node 22/24 recommended)
 - **Code Style & Formatting**: Prettier + ESLint
 
 ## Quick Reference Commands

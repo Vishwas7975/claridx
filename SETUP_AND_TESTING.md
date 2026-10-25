@@ -616,14 +616,17 @@ npm run check
 
 **What the frontend suite covers:**
 
-- `Auth.test.tsx` — login form behavior, error handling, duplicate submissions.
-- `PatientForm.test.tsx` — patient input form validation and state.
-- `PredictionPage.test.tsx` — prediction workflow, loading states, result display.
-- `ResultView.test.tsx` — explanation rendering, sensitivity display.
-- `client.test.ts` — API client token injection and 401 handling.
-- `errors.test.ts` — ApiError class.
-- `form.test.ts` — Form state logic.
-- `format.test.ts` (heart) — Feature value formatters.
+The suite runs **207 automated tests across 17 test files** via Vitest with JSDOM:
+- `LandingPage.test.tsx` — public landing page, interactive preview switching, theme toggle, navigation links.
+- `ThemeToggle.test.tsx` / `ThemeContext.test.tsx` — light/dark switching, localStorage persistence, OS media query sync.
+- `Auth.test.tsx` & `RegisterForm.test.tsx` — login and patient registration forms, role constraints, back-to-home actions.
+- `PatientDashboard.test.tsx` — patient overview, new assessment, longitudinal history, PDF downloading.
+- `PatientForm.test.tsx` (Heart & Diabetes) — input validation, Pima 21+ female cohort guidance, state clearing.
+- `PredictionPage.test.tsx` — multi-model consensus, prediction workflow, loading states, result display.
+- `ResultView.test.tsx` — SHAP & LIME charts, cross-explainer agreement, sensitivity simulation display.
+- `client.test.ts`, `errors.test.ts`, `form.test.ts`, `format.test.ts` — API client, error handling, formatting utilities.
+
+> **Node.js 20 Compatibility:** `npm test` automatically preloads `src/test/node-shim.cjs` via `NODE_OPTIONS`, polyfilling JSDOM 26+ requirements on Node 20. Production builds (`npm run build`) remain 100% decoupled from this test shim.
 
 **Interpreting failures:**
 

@@ -93,6 +93,9 @@ These objectives are grounded in the project proposal:
 | Calibrated probability scores | 🔲 Future work |
 | Counterfactual / what-if analysis | 🔲 Future work |
 | PDF report generation (ReportLab) | ✅ Implemented |
+| Public product landing page with interactive clinical preview | ✅ Implemented |
+| Zero-dependency Light/Dark theme toggle with persistence | ✅ Implemented |
+| Explicit diabetes pregnancy-field cohort guidance | ✅ Implemented |
 | Fairness / subgroup analysis | 🔲 Future work |
 | Audit log | 🔲 Future work |
 
@@ -100,10 +103,18 @@ These objectives are grounded in the project proposal:
 
 ## 3. Features implemented
 
+### Public landing page and theme system
+
+- **Public Landing Page:** A dedicated, polished product landing page (`/`) presenting ClariDx's clinical AI decision-support capabilities, dual disease assessment workflows, a 4-step explainable pipeline overview, and an interactive live clinical demonstration preview card.
+- **Light & Dark Theme Toggle:** An accessible, zero-dependency theme toggle (`ThemeToggle`) supporting deep navy dark mode (`#070b14` / `#0c1322`, cyan/teal `#06b6d4`, technical grid texture, zero emojis) and clean clinical light mode (`#f8fafc`). User preference is saved to `localStorage` (`claridx_theme`) and synchronized with system OS color preferences.
+- **Responsive Architecture:** Fully responsive layouts across mobile (390px), tablet (768px), and wide desktop displays without clipping or horizontal overflow.
+- **Accessible Navigation:** Header provides instant navigation to **Sign In** and **Get Started** (public patient registration), with dedicated return links (`Back to home`) from authentication views.
+
 ### Disease workflows
 
 - **Heart disease** — UCI Cleveland dataset (303 patients, 13 features).
 - **Diabetes** — Pima Indians Diabetes Database via OpenML ID 37 (768 patients, 8 features).
+  - *Cohort Guidance & Architecture Decision:* The benchmark dataset comprises females aged 21 and older. ClariDx retains `preg` as an authentic trained feature (avoiding invalid synthetic mappings to biological sex) while providing transparent UI guidance. Clinicians assessing male patients may enter `0`, with clear documentation that this represents an off-distribution prediction not clinically validated for male cohorts. See [`docs/DIABETES_FEATURE_DECISION.md`](docs/DIABETES_FEATURE_DECISION.md).
 
 ### Multi-model evaluation and consensus
 
@@ -596,11 +607,14 @@ uv run ruff check .                     # lint
 uv run ruff format --check .            # format check
 ```
 
-The backend suite covers: API endpoints, RBAC, authentication, JWT edge cases,
-prediction pipelines, SHAP, LIME, agreement metrics, sensitivity analysis, CLI
-provisioning, database migrations, and OpenAPI contract synchronization.
+The backend suite (302 tests across 21 test files) covers: API endpoints, RBAC, authentication,
+public patient registration, JWT edge cases, prediction pipelines, multi-model consensus,
+prediction history persistence, PDF generation, SHAP, LIME, agreement metrics, sensitivity analysis,
+CLI provisioning, database migrations, and OpenAPI contract synchronization.
 
 ### Frontend (from `frontend/`)
+
+The frontend suite contains 207 tests across 17 test files (covering component rendering, landing page, theme context, form validation, patient dashboard, history, and mock API integration). Testing on Node.js 20 LTS is supported via an isolated test-shim (`src/test/node-shim.cjs`), while production builds (`npm run build`) remain strictly decoupled.
 
 ```bash
 npm test                                # unit and component tests

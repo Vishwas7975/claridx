@@ -45,7 +45,7 @@ When explaining to examiners, emphasize **why** each technology was selected:
 - **Vite:** Next-generation frontend tooling providing sub-second Hot Module Replacement (HMR) and optimized ES-module production bundling.
 - **TanStack React Query v5:** Server-state management handling caching, loading states, error boundaries, and background data synchronization.
 - **OpenAPI Type Sync (`openapi-fetch` + `openapi-typescript`):** The frontend types are automatically generated from backend FastAPI Pydantic models via an automated pipeline (`npm run api:sync`). If a backend schema changes, frontend compilation catches mismatches instantly.
-- **CSS Custom Properties Design System:** Built without heavy external CSS frameworks to retain complete control over WCAG AA clinical contrast, typography (Google Inter), and responsive mobile/desktop layouts.
+- **CSS Custom Properties & Theme System:** Built with vanilla CSS custom properties supporting an accessible Light/Dark theme toggle (`data-theme="dark"` / `data-theme="light"`), persistent `localStorage` preference (`claridx_theme`), system preference synchronization, and strict WCAG AA clinical contrast across desktop, tablet, and mobile layouts.
 
 ### 3.2 Backend (High-Performance Async API)
 - **FastAPI (Python 3.12):** Asynchronous, OpenAPI-native web framework with automatic Swagger UI and ReDoc documentation.
@@ -63,7 +63,7 @@ When explaining to examiners, emphasize **why** each technology was selected:
 - **Argon2id:** Winner of the Password Hashing Competition; state-of-the-art memory-hard password hashing.
 - **Timing-Safe Dummy Verification:** If an attacker tries logging in with an email that does not exist, ClariDx still executes an Argon2id verification cycle on a dummy hash to prevent email enumeration via response timing attacks.
 - **PyJWT (HS256):** Stateless bearer token authentication enforcing a strict 30-minute expiration and required `"type": "access"` claims.
-- **CLI-Only User Provisioning:** No unauthenticated public registration endpoint exists. Accounts must be provisioned by a server administrator via CLI (`python -m app.cli.create_user`).
+- **Dual-Tier User Provisioning & Least-Privilege Registration:** Public self-service registration (`POST /api/v1/auth/register`) automatically assigns users the least-privileged `PATIENT` role. Privileged accounts (`DOCTOR`, `RESEARCHER`, `ADMIN`) cannot be registered publicly and must be provisioned via the administrator CLI (`python -m app.cli.create_user`), preserving strict clinical governance.
 
 ---
 
@@ -89,6 +89,21 @@ When explaining to examiners, emphasize **why** each technology was selected:
   - Treating them as true zeros completely corrupts model weights.
   - ClariDx employs a domain-specific filter: converts zeros in `plas`, `pres`, `skin`, `insu`, and `mass` to `NaN` and imputes them with the training median, while preserving `preg = 0` as a valid medical measurement.
 - **Models Implemented:** Logistic Regression (Selected primary model based on 5x5 repeated cross-validation ROC-AUC of 0.842), Random Forest, Gradient Boosting, MLP.
+
+### 4.3 Why We Did Not Replace Pregnancy Count with Sex (Architecture & Clinical Decision)
+For complete details, see [`docs/DIABETES_FEATURE_DECISION.md`](DIABETES_FEATURE_DECISION.md).
+
+1. **Why we did not replace pregnancy count with Sex:**
+   - The underlying models were trained on eight specific benchmark features (`preg`, `plas`, `pres`, `skin`, `insu`, `mass`, `pedi`, `age`).
+   - The Pima training dataset contains exclusively women aged 21 or older and does not contain a `Sex` feature.
+   - Replacing `preg` with `sex` without retraining creates an immediate feature mismatch against the serialized pipelines.
+   - Mapping biological sex into the pregnancy field (e.g. arbitrarily encoding male as 0) incorrectly treats two biologically distinct attributes as equivalent, producing invalid risk predictions and corrupting SHAP attributions.
+   - Adding a true `Sex` feature properly requires selecting a representative multi-sex diabetes cohort, retraining all models, recalculating cross-validation metrics, and re-validating the explainability pipelines.
+
+2. **Why keeping pregnancy count helps in the current scenario:**
+   - Preserves 100% compatibility with the existing trained models, preprocessing, SHAP/LIME explainability pipelines, API schemas, and automated tests.
+   - Avoids fabricated inputs, synthetic mappings, and unnecessary regressions.
+   - Retains the current thoroughly tested diabetes pipeline while transparently communicating its demographic training limitations to clinicians and evaluators.
 
 ---
 
@@ -137,11 +152,13 @@ What if a patient cannot afford or has not yet completed their Insulin test?
 
 Follow these steps for a flawless 5-minute presentation:
 
-### Step 1: Login & Role-Based Access Control
+### Step 1: Public Landing Page & Theme System
 1. Open `http://localhost:5173`.
-2. Point out the split-panel design: highlight the security notice, clinical disclaimers, and the **"Request Access"** link (explains why self-registration is disabled in clinical systems).
-3. Sign in as **Doctor** (`doctor@claridx.local` / `ClariDxDemo2026!`).
-4. Show the top navigation bar: doctor's name, active `DOCTOR` badge, and condition tabs.
+2. Show the modern **Public Landing Page**: point out the high-contrast branding, value propositions, clinical workflow cards, and the interactive live preview card.
+3. Demonstrate the **Theme Toggle**: switch between the deep navy dark mode and clinical light mode. Refresh the page to demonstrate persistent preference (`localStorage`).
+4. Click **"Sign In"** in the navigation header to enter the login view.
+5. Sign in as **Doctor** (`doctor@claridx.local` / `ClariDxDemo2026!`).
+6. Point out the top navigation bar: doctor's identity, active `DOCTOR` badge, and condition tabs.
 
 ### Step 2: Heart Disease Prediction & Full Explanation
 1. Select **Heart Disease**.
@@ -165,9 +182,10 @@ Follow these steps for a flawless 5-minute presentation:
 1. Switch to the **Diabetes** tab.
 2. Click **"Example: routine clinic (skin & insulin missing)"**.
 3. Point out that skinfold thickness and insulin are empty.
-4. Intentionally enter `0` in **Plasma Glucose**.
-5. Click **"Analyse"**.
-6. Show the warning banner: ClariDx caught that glucose=0 is biologically implausible and imputed it using the population median rather than treating the patient as having zero blood sugar!
+4. Point out the explicit **Pregnancy Field Guidance**: explain that the label and helper text transparently inform clinicians that the Pima training cohort was restricted to females aged 21+, and that entering 0 allows testing without claiming clinical validation for male cohorts.
+5. Intentionally enter `0` in **Plasma Glucose**.
+6. Click **"Analyse"**.
+7. Show the warning banner: ClariDx caught that glucose=0 is biologically implausible and imputed it using the population median rather than treating the patient as having zero blood sugar!
 
 ### Step 5: Role Governance Demonstration
 1. Click **"Sign out"**.
@@ -209,8 +227,8 @@ Follow these steps for a flawless 5-minute presentation:
 ### Q10: How do you guarantee type safety between Python and TypeScript?
 > **Answer:** We have an automated script `npm run api:sync`. FastAPI automatically generates an OpenAPI 3.1 specification at `backend/app/export_openapi.py`. The frontend uses `openapi-typescript` to compile that JSON into static TypeScript definitions (`schema.d.ts`). As a result, the frontend compiler immediately catches any API parameter or response mismatch at build time.
 
-### Q11: Why is self-registration disabled in the application?
-> **Answer:** In a hospital or clinical environment, access to patient prediction systems must be strictly governed. Allowing anyone on the internet to self-register as a "Doctor" violates HIPAA and clinical governance. All user provisioning is restricted to the administrator command-line tool (`python -m app.cli.create_user`).
+### Q11: How does ClariDx handle user registration and role governance?
+> **Answer:** ClariDx implements a dual-tier onboarding model: public account registration (`POST /api/v1/auth/register`) is available for patients, automatically binding new accounts to the least-privileged `PATIENT` role. Privileged accounts (`DOCTOR`, `RESEARCHER`, `ADMIN`) cannot be chosen or self-registered; they must be provisioned via the secure administrator command-line tool (`python -m app.cli.create_user`). This prevents privilege escalation while supporting self-service patient onboarding.
 
 ### Q12: What role-based restrictions exist for Researchers?
 > **Answer:** Researchers have read-only access. They can query `/api/v1/heart/features`, `/api/v1/diabetes/features`, and model metadata to study benchmark metrics. However, any `POST` request to prediction endpoints immediately returns `HTTP 403 Forbidden`.
@@ -219,15 +237,21 @@ Follow these steps for a flawless 5-minute presentation:
 > **Answer:** In medical screening, accuracy alone is misleading due to class imbalances. We prioritized **ROC-AUC** (discriminative ability across all thresholds), **Recall / Sensitivity** (minimizing false negatives so sick patients aren't missed), and **Brier Score** (evaluating probability score calibration).
 
 ### Q14: How are unit tests organized and verified?
-> **Answer:** The project contains 469 automated tests:
-> - **278 backend tests** in `pytest` covering API routes, RBAC permission gates, JWT edge cases, pipelines, SHAP/LIME generators, and database migrations.
-> - **191 frontend tests** in `vitest` covering component rendering, form validation, state clearing, mock API integration, and error handling.
+> **Answer:** The project contains 509 automated tests:
+> - **302 backend tests** in `pytest` covering API routes, RBAC permission gates, JWT edge cases, pipelines, SHAP/LIME generators, multi-model consensus, prediction history, and database migrations.
+> - **207 frontend tests** in `vitest` covering component rendering, landing page, theme context, form validation, state clearing, mock API integration, and error handling.
 
 ### Q15: What are the main limitations of this project?
 > **Answer:** 
 > 1. Datasets are historical benchmark cohorts (Cleveland heart study with 303 patients; Pima Indians study limited to Arizona Pima females $\ge 21$), so models cannot be generalized to broader global demographic populations without retraining on local clinical cohorts.
 > 2. Explanations reflect model reasoning, not necessarily biological causality.
 > 3. Models must undergo prospective clinical trials and probability calibration before real-world patient deployment.
+
+### Q16: Why did you keep pregnancy count in the diabetes form instead of replacing it with biological sex?
+> **Answer:** 
+> 1. The underlying Pima Indians model was trained on eight specific features (`preg`, `plas`, `pres`, `skin`, `insu`, `mass`, `pedi`, `age`) from an all-female cohort aged 21+. Replacing pregnancy with sex without retraining would cause a fatal schema mismatch with the serialized scikit-learn pipelines.
+> 2. Arbitrarily mapping sex to 0 pregnancies treats two biologically and statistically distinct attributes as equivalent, creating invalid risk predictions and corrupting SHAP explanations.
+> 3. Retaining `preg` maintains complete compatibility with all trained models, imputers, SHAP/LIME pipelines, database schemas, and automated tests, while our enhanced UI guidance transparently communicates the demographic limitations of the benchmark training data.
 
 ---
 
