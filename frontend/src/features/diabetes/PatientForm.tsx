@@ -96,7 +96,7 @@ function Field({ spec, value, error, onChange, onBlur }: FieldProps) {
       {hint !== null && (
         <p id={`${id}-hint`} className="hint">
           {spec.name === 'preg'
-            ? `${hint} • Research cohort input; enter applicable count (0–25) or leave blank if unknown/not applicable.`
+            ? `${hint} • Research cohort feature (Pima Indians study; females aged 21+). 0 is valid if non-applicable or never pregnant. Note: Model validity outside this historical female cohort is uncertain.`
             : hint}
         </p>
       )}

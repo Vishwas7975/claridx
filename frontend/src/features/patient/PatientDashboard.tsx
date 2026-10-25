@@ -51,42 +51,31 @@ export function PatientDashboard() {
   return (
     <div className="patient-dashboard" style={{ marginTop: '0.5rem' }}>
       {/* Patient Sub-Navigation */}
-      <nav
-        className="patient-nav"
-        aria-label="Patient navigation"
-        style={{
-          display: 'flex',
-          gap: '0.5rem',
-          borderBottom: '2px solid var(--border)',
-          paddingBottom: '0.5rem',
-          marginBottom: '1.5rem',
-          flexWrap: 'wrap',
-        }}
-      >
+      <nav className="patient-nav" aria-label="Patient navigation">
         <button
           type="button"
-          className={tab === 'overview' ? 'condition-btn active' : 'condition-btn'}
+          className={tab === 'overview' ? 'patient-tab-btn active' : 'patient-tab-btn'}
           onClick={() => setTab('overview')}
         >
           Overview
         </button>
         <button
           type="button"
-          className={tab === 'assessment' ? 'condition-btn active' : 'condition-btn'}
+          className={tab === 'assessment' ? 'patient-tab-btn active' : 'patient-tab-btn'}
           onClick={() => setTab('assessment')}
         >
           New Assessment
         </button>
         <button
           type="button"
-          className={tab === 'history' ? 'condition-btn active' : 'condition-btn'}
+          className={tab === 'history' ? 'patient-tab-btn active' : 'patient-tab-btn'}
           onClick={() => setTab('history')}
         >
           My History &amp; Reports
         </button>
         <button
           type="button"
-          className={tab === 'profile' ? 'condition-btn active' : 'condition-btn'}
+          className={tab === 'profile' ? 'patient-tab-btn active' : 'patient-tab-btn'}
           onClick={() => setTab('profile')}
         >
           My Account
@@ -95,7 +84,7 @@ export function PatientDashboard() {
 
       {/* TAB 1: OVERVIEW */}
       {tab === 'overview' && (
-        <div>
+        <div className="patient-tab-content">
           <div
             className="panel"
             style={{
@@ -453,90 +442,96 @@ export function PatientDashboard() {
       )}
 
       {/* TAB 3: HISTORY */}
-      {tab === 'history' && <PatientHistoryView onStartAssessment={() => setTab('assessment')} />}
+      {tab === 'history' && (
+        <div className="patient-tab-content">
+          <PatientHistoryView onStartAssessment={() => setTab('assessment')} />
+        </div>
+      )}
 
       {/* TAB 4: MY ACCOUNT */}
       {tab === 'profile' && (
-        <div className="panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <div
-            className="panel-header"
-            style={{
-              marginBottom: '1.5rem',
-              borderBottom: '1px solid var(--border)',
-              paddingBottom: '1rem',
-            }}
-          >
-            <h2>My Patient Account</h2>
-            <p className="hint">Account credentials and session security settings.</p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="patient-tab-content">
+          <div className="panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
             <div
+              className="panel-header"
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '0.75rem',
-                background: 'var(--surface-raised)',
-                borderRadius: 'var(--radius)',
+                marginBottom: '1.5rem',
+                borderBottom: '1px solid var(--border)',
+                paddingBottom: '1rem',
               }}
             >
-              <span style={{ color: 'var(--text-secondary)' }}>Full Name:</span>
-              <strong>{user?.full_name || 'N/A'}</strong>
+              <h2>My Patient Account</h2>
+              <p className="hint">Account credentials and session security settings.</p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  background: 'var(--surface-raised)',
+                  borderRadius: 'var(--radius)',
+                }}
+              >
+                <span style={{ color: 'var(--text-secondary)' }}>Full Name:</span>
+                <strong>{user?.full_name || 'N/A'}</strong>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  background: 'var(--surface-raised)',
+                  borderRadius: 'var(--radius)',
+                }}
+              >
+                <span style={{ color: 'var(--text-secondary)' }}>Email Address:</span>
+                <strong>{user?.email}</strong>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  background: 'var(--surface-raised)',
+                  borderRadius: 'var(--radius)',
+                }}
+              >
+                <span style={{ color: 'var(--text-secondary)' }}>Account Role:</span>
+                <span className="role-badge role-patient">PATIENT</span>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  background: 'var(--surface-raised)',
+                  borderRadius: 'var(--radius)',
+                }}
+              >
+                <span style={{ color: 'var(--text-secondary)' }}>Security:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--success)' }}>
+                  Argon2id Hashed &bull; JWT Authenticated
+                </span>
+              </div>
             </div>
 
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '0.75rem',
-                background: 'var(--surface-raised)',
-                borderRadius: 'var(--radius)',
+                marginTop: '2rem',
+                borderTop: '1px solid var(--border)',
+                paddingTop: '1.25rem',
+                textAlign: 'right',
               }}
             >
-              <span style={{ color: 'var(--text-secondary)' }}>Email Address:</span>
-              <strong>{user?.email}</strong>
+              <button type="button" className="secondary" onClick={logout}>
+                Sign Out of ClariDx
+              </button>
             </div>
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '0.75rem',
-                background: 'var(--surface-raised)',
-                borderRadius: 'var(--radius)',
-              }}
-            >
-              <span style={{ color: 'var(--text-secondary)' }}>Account Role:</span>
-              <span className="role-badge role-patient">PATIENT</span>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '0.75rem',
-                background: 'var(--surface-raised)',
-                borderRadius: 'var(--radius)',
-              }}
-            >
-              <span style={{ color: 'var(--text-secondary)' }}>Security:</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--success)' }}>
-                Argon2id Hashed &bull; JWT Authenticated
-              </span>
-            </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: '2rem',
-              borderTop: '1px solid var(--border)',
-              paddingTop: '1.25rem',
-              textAlign: 'right',
-            }}
-          >
-            <button type="button" className="secondary" onClick={logout}>
-              Sign Out of ClariDx
-            </button>
           </div>
         </div>
       )}

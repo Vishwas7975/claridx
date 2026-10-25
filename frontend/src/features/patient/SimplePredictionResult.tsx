@@ -74,8 +74,8 @@ export function SimplePredictionResult({ condition, result, onReset }: Props) {
           padding: '1.25rem',
           borderRadius: 'var(--radius)',
           margin: '1.25rem 0',
-          backgroundColor: isPositive ? '#fef3c7' : '#ecfdf5',
-          border: `1px solid ${isPositive ? '#fde68a' : '#a7f3d0'}`,
+          backgroundColor: isPositive ? 'var(--warn-bg)' : 'var(--success-bg)',
+          border: `1px solid ${isPositive ? 'var(--warn-border)' : 'var(--success-border)'}`,
         }}
       >
         <div
@@ -87,20 +87,22 @@ export function SimplePredictionResult({ condition, result, onReset }: Props) {
               borderRadius: '9999px',
               fontSize: '0.85rem',
               fontWeight: 700,
-              backgroundColor: isPositive ? '#d97706' : '#059669',
+              backgroundColor: isPositive ? 'var(--warn)' : 'var(--success)',
               color: '#ffffff',
             }}
           >
             {isPositive ? 'Elevated Risk' : 'Lower Risk'}
           </span>
-          <strong style={{ fontSize: '1.15rem', color: isPositive ? '#92400e' : '#065f46' }}>
+          <strong
+            style={{ fontSize: '1.15rem', color: isPositive ? 'var(--warn)' : 'var(--success)' }}
+          >
             {isPositive ? 'Elevated Risk Detected' : 'Lower Risk Indicated'}
           </strong>
         </div>
         <p
           style={{
             fontSize: '0.95rem',
-            color: isPositive ? '#78350f' : '#047857',
+            color: isPositive ? 'var(--warn)' : 'var(--success)',
             margin: 0,
             lineHeight: 1.5,
           }}
@@ -146,8 +148,8 @@ export function SimplePredictionResult({ condition, result, onReset }: Props) {
                 fontSize: '0.75rem',
                 padding: '0.2rem 0.5rem',
                 borderRadius: '4px',
-                background: '#e2e8f0',
-                color: '#475569',
+                background: 'var(--border)',
+                color: 'var(--text-secondary)',
                 fontWeight: 600,
               }}
             >
@@ -341,9 +343,9 @@ export function SimplePredictionResult({ condition, result, onReset }: Props) {
                       borderRadius: '4px',
                       fontSize: '0.8rem',
                       fontWeight: 600,
-                      backgroundColor: increases ? '#fef3c7' : '#ecfdf5',
-                      color: increases ? '#b45309' : '#047857',
-                      border: `1px solid ${increases ? '#fde68a' : '#a7f3d0'}`,
+                      backgroundColor: increases ? 'var(--warn-bg)' : 'var(--success-bg)',
+                      color: increases ? 'var(--warn)' : 'var(--success)',
+                      border: `1px solid ${increases ? 'var(--warn-border)' : 'var(--success-border)'}`,
                     }}
                   >
                     {increases ? 'Pushes toward elevated risk' : 'Pushes toward lower risk'}

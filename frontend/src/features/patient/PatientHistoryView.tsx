@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { HistoryRecord } from '../../api/types'
 import { useAuth } from '../auth/AuthContext'
 
@@ -44,45 +45,30 @@ function formatAssessmentDate(isoString: string): { local: string; utc: string }
 
 export function PatientHistoryView({ onStartAssessment }: Props) {
   const { token } = useAuth()
-  const [records, setRecords] = useState<HistoryRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  useEffect(() => {
-    let active = true
-    async function fetchHistory() {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await fetch('/api/v1/history?limit=50', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        if (!res.ok) {
-          throw new Error(`Failed to load history (${res.status})`)
-        }
-        const data = await res.json()
-        if (active) {
-          setRecords(data.items || [])
-        }
-      } catch {
-        if (active) {
-          setError('Unable to load assessment history. Please try again.')
-        }
-      } finally {
-        if (active) {
-          setLoading(false)
-        }
+  const historyQuery = useQuery({
+    queryKey: ['patient-history', token],
+    staleTime: 60000,
+    queryFn: async () => {
+      const res = await fetch('/api/v1/history?limit=50', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (!res.ok) {
+        throw new Error(`Failed to load history (${res.status})`)
       }
-    }
-    void fetchHistory()
-    return () => {
-      active = false
-    }
-  }, [token])
+      const data = await res.json()
+      return (data.items || []) as HistoryRecord[]
+    },
+    enabled: Boolean(token),
+  })
+
+  const loading = historyQuery.isPending
+  const error = historyQuery.isError ? 'Unable to load assessment history. Please try again.' : null
+  const records = historyQuery.data || []
 
   async function handleDownload(record: HistoryRecord) {
     setDownloadingId(record.record_id)
@@ -203,9 +189,9 @@ export function PatientHistoryView({ onStartAssessment }: Props) {
                         borderRadius: '9999px',
                         fontSize: '0.75rem',
                         fontWeight: 700,
-                        backgroundColor: isPos ? '#fef3c7' : '#ecfdf5',
-                        color: isPos ? '#b45309' : '#047857',
-                        border: `1px solid ${isPos ? '#fde68a' : '#a7f3d0'}`,
+                        backgroundColor: isPos ? 'var(--warn-bg)' : 'var(--success-bg)',
+                        color: isPos ? 'var(--warn)' : 'var(--success)',
+                        border: `1px solid ${isPos ? 'var(--warn-border)' : 'var(--success-border)'}`,
                       }}
                     >
                       {isPos ? 'Elevated Risk' : 'Lower Risk'}
@@ -313,8 +299,8 @@ export function PatientHistoryView({ onStartAssessment }: Props) {
                               key={idx}
                               style={{
                                 padding: '0.4rem 0.75rem',
-                                background: '#f8fafc',
-                                border: '1px solid #e2e8f0',
+                                background: 'var(--surface-raised)',
+                                border: '1px solid var(--border)',
                                 borderRadius: '4px',
                                 fontSize: '0.78rem',
                               }}
