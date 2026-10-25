@@ -11,8 +11,8 @@
     "api:export": "cd ../backend && uv run python -m app.export_openapi",
     "api:types": "npm exec --yes --package=openapi-typescript@7.13.0 --package=typescript@5.9.3 -- openapi-typescript openapi.json -o src/api/schema.d.ts",
     "api:sync": "npm run api:export && npm run api:types",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "NODE_OPTIONS='--require ./src/test/node-shim.cjs' vitest run",
+    "test:watch": "NODE_OPTIONS='--require ./src/test/node-shim.cjs' vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm run test && npm run build"

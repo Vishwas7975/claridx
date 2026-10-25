@@ -6,13 +6,13 @@ import { setAuthToken } from '../../api/client'
 import App from '../../App'
 import { json, mockApi } from '../../test/mockApi'
 
-function renderApp() {
+function renderApp(initialView: 'landing' | 'login' | 'register' | 'request-access' = 'login') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   render(
     <QueryClientProvider client={client}>
-      <App />
+      <App initialView={initialView} />
     </QueryClientProvider>,
   )
   return userEvent.setup()

@@ -18,7 +18,7 @@ function renderApp(): User {
   })
   render(
     <QueryClientProvider client={client}>
-      <App />
+      <App initialView="login" />
     </QueryClientProvider>,
   )
   return userEvent.setup()
@@ -280,7 +280,7 @@ describe('Authentication and RBAC Integration', () => {
 
     expect(await screen.findByText('System Admin')).toBeInTheDocument()
     expect(screen.getByText('ADMIN')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Analyse' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Analyse' })).toBeInTheDocument()
     expect(screen.queryByRole('status', { name: /researcher access/i })).not.toBeInTheDocument()
   })
 
@@ -303,7 +303,7 @@ describe('Authentication and RBAC Integration', () => {
 
     expect(await screen.findByText('Dr. Sarah Connor')).toBeInTheDocument()
     expect(screen.getByText('DOCTOR')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Analyse' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Analyse' })).toBeInTheDocument()
   })
 
   it('restricts RESEARCHER user from prediction action while preserving metadata access', async () => {

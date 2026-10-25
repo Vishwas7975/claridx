@@ -5,9 +5,10 @@ import { useAuth } from './AuthContext'
 interface Props {
   onRequestAccess: () => void
   onRegister?: () => void
+  onBackToHome?: () => void
 }
 
-export function LoginForm({ onRequestAccess, onRegister }: Props) {
+export function LoginForm({ onRequestAccess, onRegister, onBackToHome }: Props) {
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -255,6 +256,19 @@ export function LoginForm({ onRequestAccess, onRegister }: Props) {
               Learn how to request an account
             </a>
           </p>
+          {onBackToHome && (
+            <p className="login-footer-link" style={{ marginTop: '0.75rem' }}>
+              <a
+                href="#home"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onBackToHome()
+                }}
+              >
+                &larr; Back to ClariDx Home
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -4,9 +4,10 @@ import { useAuth } from './AuthContext'
 
 interface Props {
   onBackToLogin: () => void
+  onBackToHome?: () => void
 }
 
-export function RegisterForm({ onBackToLogin }: Props) {
+export function RegisterForm({ onBackToLogin, onBackToHome }: Props) {
   const { register } = useAuth()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -335,6 +336,19 @@ export function RegisterForm({ onBackToLogin }: Props) {
               Sign in
             </a>
           </p>
+          {onBackToHome && (
+            <p className="login-footer-link" style={{ marginTop: '0.75rem' }}>
+              <a
+                href="#home"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onBackToHome()
+                }}
+              >
+                &larr; Back to ClariDx Home
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>
